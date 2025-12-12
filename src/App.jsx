@@ -1,95 +1,187 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState } from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Link,
+  useNavigate,
+} from "react-router-dom";
+import axios from "axios";
+import "./App.css"; // <-- Make sure this is included
 
-const App = () => {
-  // State for student form and records
-  const [name, setName] = useState('');
-  const [cls, setCls] = useState('');
-  const [area, setArea] = useState('');
-  const [students, setStudents] = useState([]);
+// Set API base URL
+axios.defaults.baseURL = "http://localhost:8080/auth";
 
-  // Fetch students when the component mounts
-  useEffect(() => {
-    axios.get('http://localhost:8080/student/get') // Your GET endpoint
-      .then((response) => {
-        setStudents(response.data); // Set fetched students data
-      })
-      .catch((error) => {
-        console.error('There was an error fetching the student data:', error);
-      });
-  }, []);
+// ---------------- REGISTER PAGE ----------------
+function Register() {
+  const navigate = useNavigate();
 
-  // Handle form submission (Insert Student)
-  const handleSubmit = (e) => {
+  const [form, setForm] = useState({
+    email: "",
+    username: "",
+    phone: "",
+    password: "",
+  });
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const newStudent = {
-      name: name,
-      cls: cls,
-      area: area,
-    };
-
-    // POST request to insert a new student
-    axios.post('http://localhost:8080/student/insert', newStudent) // Your POST endpoint
-      .then((response) => {
-        setStudents([...students, response.data]); // Update students list
-        setName('');
-        setCls('');
-        setArea('');
-      })
-      .catch((error) => {
-        console.error('There was an error inserting the student:', error);
-      });
+    try {
+      await axios.post("/register", form);
+      alert("Registered Successfully!");
+      navigate("/login");
+    } catch (err) {
+      alert("Registration failed: " + (err.response?.data || ""));
+    }
   };
 
   return (
-    <div>
-      <h1>Student Management</h1>
+    <div className="container">
+      <h2>Register</h2>
 
       <form onSubmit={handleSubmit}>
-        <div>
-          <label>Name:</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Enter student's name"
-          />
-        </div>
+        <input
+          name="email"
+          placeholder="Email"
+          value={form.email}
+          onChange={handleChange}
+        /><br /><br />
 
-        <div>
-          <label>Class:</label>
-          <input
-            type="text"
-            value={cls}
-            onChange={(e) => setCls(e.target.value)}
-            placeholder="Enter class"
-          />
-        </div>
+        <input
+          name="username"
+          placeholder="Username"
+          value={form.username}
+          onChange={handleChange}
+        /><br /><br />
 
-        <div>
-          <label>Area:</label>
-          <input
-            type="text"
-            value={area}
-            onChange={(e) => setArea(e.target.value)}
-            placeholder="Enter area"
-          />
-        </div>
+        <input
+          name="phone"
+          placeholder="Phone"
+          value={form.phone}
+          onChange={handleChange}
+        /><br /><br />
 
-        <button type="submit">Add Student</button>
+        <input
+          name="password"
+          type="password"
+          placeholder="Password"
+          value={form.password}
+          onChange={handleChange}
+        /><br /><br />
+
+        <button>Register</button>
       </form>
 
-      <h2>Students List</h2>
-      <ul>
-        {students.map((student) => (
-          <li key={student.id}>
-            {student.name} - Class: {student.cls} - Area: {student.area}
-          </li>
-        ))}
-      </ul>
+      <p>
+        Already have an account? <Link to="/login">Login here</Link>
+      </p>
     </div>
   );
-};
+}
 
-export default App;
+// ---------------- LOGIN PAGE ----------------
+function Login() {
+  const navigate = useNavigate();
+
+  const [form, setForm] = useState({
+    email: "",
+    password: "",
+  });
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      const res = await axios.post("/login", form);
+
+      // Save token
+      localStorage.setItem("token", res.data);
+
+      alert("Login Successful!");
+      navigate("/dashboard");
+    } catch (err) {
+      alert("Login failed: " + (err.response?.data || ""));
+    }
+  };
+
+  return (
+    <div className="container">
+      <h2>Login</h2>
+
+      <form onSubmit={handleSubmit}>
+        <input
+          name="email"
+          placeholder="Email / Username / Phone"
+          value={form.email}
+          onChange={handleChange}
+        /><br /><br />
+
+        <input
+          name="password"
+          type="password"
+          placeholder="Password"
+          value={form.password}
+          onChange={handleChange}
+        /><br /><br />
+
+        <button>Login</button>
+      </form>
+
+      <p>
+        New user? <Link to="/register">Register here</Link>
+      </p>
+    </div>
+  );
+}
+
+// ---------------- DASHBOARD ----------------
+function Dashboard() {
+  const navigate = useNavigate();
+
+  const logout = () => {
+    localStorage.removeItem("token");
+    navigate("/login");
+  };
+
+  return (
+    <div className="dashboard">
+      <h2>Welcome to Dashboard</h2>
+      <button onClick={logout}>Logout</button>
+    </div>
+  );
+}
+
+// ---------------- PROTECTED ROUTE ----------------
+function ProtectedRoute({ children }) {
+  const token = localStorage.getItem("token");
+  return token ? children : <Login />;
+}
+
+// ---------------- MAIN APP ----------------
+export default function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<Register />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/login" element={<Login />} />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </Router>
+  );
+}
