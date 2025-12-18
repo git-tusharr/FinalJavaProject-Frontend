@@ -1,18 +1,20 @@
 import { useState } from "react";
+import { GoogleLogin } from "@react-oauth/google";
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   Link,
   useNavigate,
+  Navigate,
 } from "react-router-dom";
 import axios from "axios";
-import "./App.css"; // <-- Make sure this is included
+import "./App.css";
 
-// Set API base URL
+// ================= AXIOS CONFIG =================
 axios.defaults.baseURL = "http://localhost:8080/auth";
 
-// ---------------- REGISTER PAGE ----------------
+// ================= REGISTER PAGE =================
 function Register() {
   const navigate = useNavigate();
 
@@ -35,7 +37,7 @@ function Register() {
       alert("Registered Successfully!");
       navigate("/login");
     } catch (err) {
-      alert("Registration failed: " + (err.response?.data || ""));
+      alert("Registration failed");
     }
   };
 
@@ -83,7 +85,7 @@ function Register() {
   );
 }
 
-// ---------------- LOGIN PAGE ----------------
+// ================= LOGIN PAGE =================
 function Login() {
   const navigate = useNavigate();
 
@@ -96,19 +98,35 @@ function Login() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  // NORMAL LOGIN
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
       const res = await axios.post("/login", form);
 
-      // Save token
-      localStorage.setItem("token", res.data);
+      // ✅ FIXED: store JWT correctly
+      localStorage.setItem("token", res.data.token);
 
       alert("Login Successful!");
       navigate("/dashboard");
     } catch (err) {
-      alert("Login failed: " + (err.response?.data || ""));
+      alert("Login failed");
+    }
+  };
+
+  // GOOGLE LOGIN
+  const handleGoogleLogin = async (credentialResponse) => {
+    try {
+      const res = await axios.post("/google", {
+        token: credentialResponse.credential,
+      });
+
+      localStorage.setItem("token", res.data.token);
+      alert("Google Login Successful!");
+      navigate("/dashboard");
+    } catch (err) {
+      alert("Google login failed");
     }
   };
 
@@ -135,14 +153,22 @@ function Login() {
         <button>Login</button>
       </form>
 
-      <p>
+      <hr style={{ margin: "20px 0" }} />
+
+      {/* GOOGLE LOGIN BUTTON */}
+      <GoogleLogin
+        onSuccess={handleGoogleLogin}
+        onError={() => alert("Google Login Failed")}
+      />
+
+      <p style={{ marginTop: "15px" }}>
         New user? <Link to="/register">Register here</Link>
       </p>
     </div>
   );
 }
 
-// ---------------- DASHBOARD ----------------
+// ================= DASHBOARD =================
 function Dashboard() {
   const navigate = useNavigate();
 
@@ -159,13 +185,13 @@ function Dashboard() {
   );
 }
 
-// ---------------- PROTECTED ROUTE ----------------
+// ================= PROTECTED ROUTE =================
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem("token");
-  return token ? children : <Login />;
+  return token ? children : <Navigate to="/login" />;
 }
 
-// ---------------- MAIN APP ----------------
+// ================= MAIN APP =================
 export default function App() {
   return (
     <Router>
