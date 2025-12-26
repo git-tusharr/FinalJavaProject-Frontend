@@ -1,9 +1,10 @@
-import { createRoot } from "react-dom/client";
-import { GoogleOAuthProvider } from "@react-oauth/google";
-import App from "./App.jsx";
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
+import App from "./App";
 
-createRoot(document.getElementById("root")).render(
-  <GoogleOAuthProvider clientId="660129225344-lqdgo1vjjbf3209aspcmps932rinbnn7.apps.googleusercontent.com">
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <BrowserRouter>
     <App />
-  </GoogleOAuthProvider>
+  </BrowserRouter>
 );
