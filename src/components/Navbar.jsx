@@ -2,29 +2,35 @@ import { Link } from "react-router-dom";
 
 export default function Navbar() {
   return (
-    <nav style={styles.nav}>
-      <h3>Auth App</h3>
+    <nav className="bg-blue-600 text-white px-6 py-4 flex items-center justify-between shadow-md">
+      <h3 className="text-xl font-bold">Auth App</h3>
 
-      <div style={styles.links}>
-        <Link to="/login">Login</Link>
-        <Link to="/register">Register</Link>
-        <Link to="/forgot-password">Forgot Password</Link>
-        <Link to="/">Home</Link>
+      <div className="flex gap-6">
+        <Link
+          to="/login"
+          className="hover:text-gray-200 transition-colors font-medium"
+        >
+          Login
+        </Link>
+        <Link
+          to="/register"
+          className="hover:text-gray-200 transition-colors font-medium"
+        >
+          Register
+        </Link>
+        <Link
+          to="/forgot-password"
+          className="hover:text-gray-200 transition-colors font-medium"
+        >
+          Forgot Password
+        </Link>
+        <Link
+          to="/"
+          className="hover:text-gray-200 transition-colors font-medium"
+        >
+          Home
+        </Link>
       </div>
     </nav>
   );
 }
-
-const styles = {
-  nav: {
-    display: "flex",
-    justifyContent: "space-between",
-    padding: "10px 20px",
-    background: "#2563eb",
-    color: "white",
-  },
-  links: {
-    display: "flex",
-    gap: "15px",
-  },
-};

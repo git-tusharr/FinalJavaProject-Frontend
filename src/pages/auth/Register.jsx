@@ -12,14 +12,12 @@ export default function Register() {
 
   const navigate = useNavigate();
 
-  // Handle normal registration
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const msg = await authController.register(form);
-      alert(msg.message || msg); // show success message
+      alert(msg.message || msg);
 
-      // ✅ Redirect to Email OTP verification page
       navigate("/email-otp", {
         state: { email: form.email, phone: form.phone },
       });
@@ -29,7 +27,6 @@ export default function Register() {
     }
   };
 
-  // ✅ GOOGLE REGISTER / LOGIN
   useEffect(() => {
     /* global google */
     google.accounts.id.initialize({
@@ -49,7 +46,7 @@ export default function Register() {
       const token = await authController.googleLogin(response.credential);
       localStorage.setItem("token", token);
       alert("Registered / Logged in with Google");
-      navigate("/home"); // redirect Google users directly to home
+      navigate("/home");
     } catch (err) {
       console.error(err);
       alert("Google registration failed");
@@ -57,46 +54,54 @@ export default function Register() {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h2>Register</h2>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+        <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Register</h2>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <input
+            type="email"
+            placeholder="Email"
+            value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            required
+            className="border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+          <input
+            type="tel"
+            placeholder="Phone"
+            value={form.phone}
+            onChange={(e) => setForm({ ...form, phone: e.target.value })}
+            required
+            className="border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+          <input
+            type="text"
+            placeholder="Username"
+            value={form.username}
+            onChange={(e) => setForm({ ...form, username: e.target.value })}
+            required
+            className="border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={form.password}
+            onChange={(e) => setForm({ ...form, password: e.target.value })}
+            required
+            className="border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+          <button
+            type="submit"
+            className="bg-blue-500 text-white py-3 rounded-lg font-semibold hover:bg-blue-600 transition"
+          >
+            Register
+          </button>
+        </form>
 
-      <input
-        placeholder="Email"
-        type="email"
-        value={form.email}
-        onChange={(e) => setForm({ ...form, email: e.target.value })}
-        required
-      />
+        <div className="my-4 border-t border-gray-300"></div>
 
-      <input
-        placeholder="Phone"
-        type="tel"
-        value={form.phone}
-        onChange={(e) => setForm({ ...form, phone: e.target.value })}
-        required
-      />
-
-      <input
-        placeholder="Username"
-        value={form.username}
-        onChange={(e) => setForm({ ...form, username: e.target.value })}
-        required
-      />
-
-      <input
-        type="password"
-        placeholder="Password"
-        value={form.password}
-        onChange={(e) => setForm({ ...form, password: e.target.value })}
-        required
-      />
-
-      <button type="submit">Register</button>
-
-      <hr />
-
-      {/* ✅ GOOGLE BUTTON */}
-      <div id="googleRegisterBtn"></div>
-    </form>
+        <div id="googleRegisterBtn" className="flex justify-center"></div>
+      </div>
+    </div>
   );
 }
