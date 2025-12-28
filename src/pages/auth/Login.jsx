@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { authController } from "../../controllers/authController";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const navigate = useNavigate(); // ✅ Add navigate
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -11,6 +13,7 @@ export default function Login() {
       const token = await authController.login({ email, password });
       localStorage.setItem("token", token);
       alert("Login successful");
+      navigate("/"); // ✅ Redirect to home
     } catch (err) {
       console.error(err);
       alert(err.response?.data?.message || "Login failed");
@@ -34,6 +37,7 @@ export default function Login() {
       const token = await authController.googleLogin(response.credential);
       localStorage.setItem("token", token);
       alert("Google Login Successful");
+      navigate("/home"); // ✅ Redirect after Google login as well
     } catch (err) {
       console.error(err);
       alert("Google Login Failed");
