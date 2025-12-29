@@ -76,8 +76,7 @@ export default function Home() {
         </Link>
       </section>
 
-      {/* BIG FOOTER */}
-      <Footer />
+     
     </div>
   );
 }

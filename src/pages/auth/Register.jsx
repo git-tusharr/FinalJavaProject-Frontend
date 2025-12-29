@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { authController } from "../../controllers/authController";
+import toast from "react-hot-toast";
 
 export default function Register() {
   const [form, setForm] = useState({
@@ -10,20 +11,25 @@ export default function Register() {
     password: "",
   });
 
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+
     try {
       const msg = await authController.register(form);
-      alert(msg.message || msg);
+      toast.success(msg.message || "Registered successfully");
 
       navigate("/email-otp", {
         state: { email: form.email, phone: form.phone },
       });
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || "Registration failed");
+      toast.error(err.response?.data?.message || "Registration failed");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -43,13 +49,18 @@ export default function Register() {
 
   const handleGoogleRegister = async (response) => {
     try {
+      toast.loading("Signing in with Google...");
       const token = await authController.googleLogin(response.credential);
+
       localStorage.setItem("token", token);
-      alert("Registered / Logged in with Google");
+      toast.dismiss();
+      toast.success("Logged in with Google");
+
       navigate("/home");
     } catch (err) {
       console.error(err);
-      alert("Google registration failed");
+      toast.dismiss();
+      toast.error("Google registration failed");
     }
   };
 
@@ -69,7 +80,7 @@ export default function Register() {
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
             required
-            className="bg-black text-white border border-gray-700 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+            className="bg-black text-white border border-gray-700 p-3 rounded-lg focus:ring-2 focus:ring-red-500"
           />
 
           <input
@@ -78,7 +89,7 @@ export default function Register() {
             value={form.phone}
             onChange={(e) => setForm({ ...form, phone: e.target.value })}
             required
-            className="bg-black text-white border border-gray-700 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+            className="bg-black text-white border border-gray-700 p-3 rounded-lg focus:ring-2 focus:ring-red-500"
           />
 
           <input
@@ -87,7 +98,7 @@ export default function Register() {
             value={form.username}
             onChange={(e) => setForm({ ...form, username: e.target.value })}
             required
-            className="bg-black text-white border border-gray-700 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+            className="bg-black text-white border border-gray-700 p-3 rounded-lg focus:ring-2 focus:ring-red-500"
           />
 
           <input
@@ -96,14 +107,23 @@ export default function Register() {
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
             required
-            className="bg-black text-white border border-gray-700 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+            className="bg-black text-white border border-gray-700 p-3 rounded-lg focus:ring-2 focus:ring-red-500"
           />
 
           <button
             type="submit"
-            className="bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition duration-300 shadow-lg"
+            disabled={loading}
+            className={`flex items-center justify-center gap-2 py-3 rounded-lg font-semibold transition duration-300 shadow-lg
+              ${
+                loading
+                  ? "bg-gray-600 cursor-not-allowed"
+                  : "bg-red-600 hover:bg-red-700"
+              }`}
           >
-            Register
+            {loading && (
+              <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            )}
+            {loading ? "Registering..." : "Register"}
           </button>
         </form>
 
