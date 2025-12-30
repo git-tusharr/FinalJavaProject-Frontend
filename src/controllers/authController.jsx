@@ -38,9 +38,14 @@ export const authController = {
     return res.data;
   },
 
-  // 🔹 VERIFY PHONE OTP (BACKEND USES @RequestParam)
+  //  VERIFY PHONE OTP (BACKEND USES @RequestParam)
   async verifyPhoneOtp({ phone, otp }) {
     const res = await authService.verifyPhoneOtp({ phone, otp });
     return res.data;
   }
 };
+
+//updated
+
+
+
