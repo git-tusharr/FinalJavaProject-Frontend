@@ -32,12 +32,16 @@ export default function Login() {
     );
   }, []);
 
+
+
+
+
   const handleGoogleLogin = async (response) => {
     try {
       const token = await authController.googleLogin(response.credential);
       localStorage.setItem("token", token);
       alert("Google Login Successful");
-      navigate("/home"); // ✅ Redirect after Google login as well
+      navigate("/home");
     } catch (err) {
       console.error(err);
       alert("Google Login Failed");
