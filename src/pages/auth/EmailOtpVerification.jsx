@@ -4,6 +4,8 @@ import { authController } from "../../controllers/authController";
 
 export default function EmailOtpVerification() {
   const [otp, setOtp] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -11,12 +13,22 @@ export default function EmailOtpVerification() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (otp.length !== 6) {
+      setErrorMessage("OTP must be exactly 6 digits.");
+      return;
+    }
+
+    setLoading(true);
+    setErrorMessage("");  // Reset error before submission
+
     try {
       await authController.verifyEmailOtp({ email, otp });
       alert("Email verified successfully!");
       navigate("/phone-otp", { state: { phone } });
     } catch (err) {
-      alert("Invalid OTP, please try again.");
+      setErrorMessage("Invalid OTP, please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -35,6 +47,13 @@ export default function EmailOtpVerification() {
           Enter the OTP sent to your email address
         </p>
 
+        {/* Error Message */}
+        {errorMessage && (
+          <p className="text-red-500 text-xs text-center mb-4">
+            {errorMessage}
+          </p>
+        )}
+
         {/* Form */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <input
@@ -43,6 +62,8 @@ export default function EmailOtpVerification() {
             onChange={(e) => setOtp(e.target.value)}
             placeholder="Enter 6-digit OTP"
             required
+            aria-label="Enter OTP"
+            maxLength={6}
             className="bg-black text-white border border-gray-700 p-3 rounded-lg
                        focus:outline-none focus:ring-2 focus:ring-red-500
                        placeholder-gray-500 tracking-widest text-center text-lg"
@@ -50,11 +71,12 @@ export default function EmailOtpVerification() {
 
           <button
             type="submit"
-            className="bg-red-600 text-white py-3 rounded-lg font-semibold
+            disabled={loading}
+            className={`bg-red-600 text-white py-3 rounded-lg font-semibold
                        hover:bg-red-700 transition duration-300 shadow-lg
-                       active:scale-95"
+                       active:scale-95 ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
           >
-            Verify Email
+            {loading ? "Verifying..." : "Verify Email"}
           </button>
         </form>
 

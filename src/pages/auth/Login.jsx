@@ -32,10 +32,6 @@ export default function Login() {
     );
   }, []);
 
-
-
-
-
   const handleGoogleLogin = async (response) => {
     try {
       const token = await authController.googleLogin(response.credential);
