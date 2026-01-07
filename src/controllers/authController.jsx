@@ -2,6 +2,7 @@ import { authService } from "../services/authService";
 
 export const authController = {
 
+
   // 🔹 REGISTER
   async register(data) {
     const res = await authService.register(data);
