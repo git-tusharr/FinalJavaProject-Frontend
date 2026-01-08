@@ -6,6 +6,7 @@ import EmailOtpVerification from "../pages/auth/EmailOtpVerification";
 import PhoneOtpVerification from "../pages/auth/PhoneOtpVerification";
 import ResetPassword from "../pages/auth/ResetPassword"; // ✅ ADD THIS
 import Home from "../pages/Home";
+import CreateProductPage from "../pages/admin/products/CreateProductPage";
 
 export default function AppRoutes() {
   return (
@@ -24,6 +25,13 @@ export default function AppRoutes() {
       {/* 🔢 OTP Verification */}
       <Route path="/email-otp" element={<EmailOtpVerification />} />
       <Route path="/phone-otp" element={<PhoneOtpVerification />} />
+
+
+      {/* ADMIN */}
+      <Route
+        path="/admin/products/create"
+        element={<CreateProductPage />}
+      />
     </Routes>
   );
 }
