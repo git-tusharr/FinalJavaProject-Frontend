@@ -6,6 +6,7 @@ import ProductInfoStep from "../Products/ProductInfoStep";
 import AttributeStep from "../Products/AttributeStep";
 import VariantStep from "../Products/VariantStep";
 import VariantPricingStep from "../Products/VariantPricingStep";
+import ProductFeatureStep from "../Products/ProductFeatureStep";
 
 export default function CreateProductLayout() {
   const [activeStep, setActiveStep] = useState(0);
@@ -16,6 +17,7 @@ export default function CreateProductLayout() {
   const [attributesData, setAttributesData] = useState([]);
   const [variantsData, setVariantsData] = useState([]);
   const [pricingData, setPricingData] = useState({});
+  const [featuresData, setFeaturesData] = useState([]);
 
   // =======================
   // Render the current step
@@ -76,7 +78,6 @@ export default function CreateProductLayout() {
           />
         );
 
-      // ✅ NEW PRICING STEP
       case 5:
         return (
           <VariantPricingStep
@@ -84,6 +85,18 @@ export default function CreateProductLayout() {
             onConfirm={(pricing) => {
               setPricingData(pricing);
               setActiveStep(6);
+            }}
+          />
+        );
+
+      // ✅ Product Feature Step
+      case 6:
+        return (
+          <ProductFeatureStep
+            productData={productData}
+            onConfirm={(features) => {
+              setFeaturesData(features);
+              setActiveStep(7);
             }}
           />
         );
@@ -145,7 +158,7 @@ export default function CreateProductLayout() {
               <h4 className="text-white font-semibold mb-2">Variants:</h4>
               {variantsData.map((v, idx) => (
                 <div key={idx} className="text-gray-300">
-                  SKU: {v.sku} | Stock: {v.stock}
+                  SKU: {v.sku} | Stock: {v.stock} | Price: {v.price}
                 </div>
               ))}
             </div>
@@ -156,6 +169,20 @@ export default function CreateProductLayout() {
               <pre className="text-gray-300">
                 {JSON.stringify(pricingData, null, 2)}
               </pre>
+            </div>
+
+            {/* Features */}
+            <div className="bg-gray-900 p-6 rounded-2xl shadow-xl">
+              <h4 className="text-white font-semibold mb-2">Features:</h4>
+              {featuresData.length > 0 ? (
+                <ul className="text-gray-300 list-disc list-inside">
+                  {featuresData.map((f, idx) => (
+                    <li key={idx}>{f}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-400">No features added</p>
+              )}
             </div>
 
             {/* Final Confirm */}
