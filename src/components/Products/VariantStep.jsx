@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createVariant } from "../../api/variantApi";
+import { createVariant, getVariants } from "../../api/variantApi";
 
 export default function VariantStep({ productData, attributesData, onConfirm }) {
   const [selectedValues, setSelectedValues] = useState({});
@@ -14,24 +14,28 @@ export default function VariantStep({ productData, attributesData, onConfirm }) 
     setSelectedValues((prev) => ({ ...prev, [attrId]: valueId }));
   };
 
-  // Add variant to local list (frontend)
+  // ➕ Add variant locally
   const handleAddVariant = () => {
-    if (!sku || !price || !stock || Object.keys(selectedValues).length !== attributesData.length) {
+    if (
+      !sku ||
+      !price ||
+      !stock ||
+      Object.keys(selectedValues).length !== attributesData.length
+    ) {
       setError("Fill SKU, price, stock, and select values for all attributes");
       return;
     }
 
-    setVariants([
-      ...variants,
+    setVariants((prev) => [
+      ...prev,
       {
         sku,
-        price: parseFloat(price),
-        stock: parseInt(stock),
+        price: Number(price),
+        stock: Number(stock),
         attributes: { ...selectedValues },
       },
     ]);
 
-    // Reset inputs for next variant
     setSku("");
     setPrice("");
     setStock("");
@@ -39,7 +43,7 @@ export default function VariantStep({ productData, attributesData, onConfirm }) 
     setError("");
   };
 
-  // Submit all variants to backend
+  // 🚀 Save variants → then FETCH variants WITH IDs
   const handleConfirmAll = async () => {
     if (variants.length === 0) {
       setError("Add at least one variant before confirming");
@@ -50,11 +54,17 @@ export default function VariantStep({ productData, attributesData, onConfirm }) 
     setError("");
 
     try {
+      // 1️⃣ Create variants
       for (const v of variants) {
         await createVariant(productData.id, v);
       }
 
-      onConfirm(variants); // pass to parent for summary
+      // 2️⃣ Fetch saved variants WITH IDs
+      const savedVariants = await getVariants(productData.id);
+
+      // 3️⃣ Pass correct data to next step
+      onConfirm(savedVariants);
+
       setVariants([]);
     } catch (err) {
       console.error(err);
@@ -74,7 +84,9 @@ export default function VariantStep({ productData, attributesData, onConfirm }) 
             <label className="text-white font-semibold">{attr.name}</label>
             <select
               value={selectedValues[attr.id] || ""}
-              onChange={(e) => handleValueSelect(attr.id, parseInt(e.target.value))}
+              onChange={(e) =>
+                handleValueSelect(attr.id, Number(e.target.value))
+              }
               className="bg-gray-800 text-white rounded-xl px-4 py-2 w-full mt-1"
             >
               <option value="">Select {attr.name}</option>
@@ -121,6 +133,7 @@ export default function VariantStep({ productData, attributesData, onConfirm }) 
         >
           Add Variant
         </button>
+
         <button
           onClick={handleConfirmAll}
           className="bg-yellow-400 hover:bg-yellow-500 px-8 py-3 rounded-xl font-bold"
@@ -129,37 +142,6 @@ export default function VariantStep({ productData, attributesData, onConfirm }) 
           {loading ? "Saving..." : "Confirm All Variants"}
         </button>
       </div>
-
-      {/* Display added variants */}
-      {variants.length > 0 && (
-        <div className="mt-6 space-y-2">
-          <h3 className="text-yellow-400 font-bold">Variants Added</h3>
-          <table className="w-full text-left border border-gray-700 rounded-xl overflow-hidden">
-            <thead className="bg-gray-800">
-              <tr>
-                <th className="px-4 py-2 text-gray-300">SKU</th>
-                <th className="px-4 py-2 text-gray-300">Price</th>
-                <th className="px-4 py-2 text-gray-300">Stock</th>
-                <th className="px-4 py-2 text-gray-300">Attributes</th>
-              </tr>
-            </thead>
-            <tbody>
-              {variants.map((v, idx) => (
-                <tr key={idx} className="border-t border-gray-700">
-                  <td className="px-4 py-2 text-white">{v.sku}</td>
-                  <td className="px-4 py-2 text-white">{v.price}</td>
-                  <td className="px-4 py-2 text-white">{v.stock}</td>
-                  <td className="px-4 py-2 text-gray-300">
-                    {Object.entries(v.attributes)
-                      .map(([attrId, valId]) => `Attr ${attrId}: Value ${valId}`)
-                      .join(", ")}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
     </div>
   );
 }
