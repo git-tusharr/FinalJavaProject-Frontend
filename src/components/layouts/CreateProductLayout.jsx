@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import SidebarSteps from "./SidebarSteps";
+
+// Step components
 import SelectCategoryStep from "../Products/SelectCategoryStep";
 import SelectBrandStep from "../Products/SelectBrandStep";
 import ProductInfoStep from "../Products/ProductInfoStep";
@@ -8,7 +10,9 @@ import VariantStep from "../Products/VariantStep";
 import VariantPricingStep from "../Products/VariantPricingStep";
 import ProductFeatureStep from "../Products/ProductFeatureStep";
 import ProductSpecificationStep from "../Products/ProductSpecificationStep";
-import ManufacturerInfoStep from "../Products/ManufacturerInfoStep"; // ✅ NEW
+import ManufacturerInfoStep from "../Products/ManufacturerInfoStep";
+import VariantImageStep from "../Products/VariantImageStep";
+import ProductImageStep from "../Products/ProductImageStep"; // new working step
 
 export default function CreateProductLayout() {
   const [activeStep, setActiveStep] = useState(0);
@@ -22,9 +26,11 @@ export default function CreateProductLayout() {
   const [pricingData, setPricingData] = useState({});
   const [featuresData, setFeaturesData] = useState([]);
   const [specificationsData, setSpecificationsData] = useState([]);
-  const [manufacturerInfo, setManufacturerInfo] = useState(""); // ✅ NEW
+  const [manufacturerData, setManufacturerData] = useState("");
+  const [variantImagesData, setVariantImagesData] = useState([]);
+  const [productImagesData, setProductImagesData] = useState([]);
 
-  // ======================= RENDER CURRENT STEP =======================
+  // ======================= STEP RENDER =======================
   const renderStep = () => {
     switch (activeStep) {
       case 0:
@@ -62,8 +68,8 @@ export default function CreateProductLayout() {
       case 3:
         return (
           <AttributeStep
-            onConfirm={(attributes) => {
-              setAttributesData(attributes);
+            onConfirm={(attrs) => {
+              setAttributesData(attrs);
               setActiveStep(4);
             }}
           />
@@ -119,122 +125,101 @@ export default function CreateProductLayout() {
           <ManufacturerInfoStep
             productData={productData}
             onConfirm={(content) => {
-              setManufacturerInfo(content);
+              setManufacturerData(content);
               setActiveStep(9);
             }}
           />
         );
 
-      // ======================= SUMMARY STEP =======================
+      // ======================= VARIANT IMAGE UPLOAD =======================
+      case 9:
+        return (
+          <VariantImageStep
+            productData={productData}
+            variants={variantsData}
+            onConfirm={(data) => {
+              setVariantImagesData(data);
+              setActiveStep(10);
+            }}
+          />
+        );
+
+      // ======================= PRODUCT IMAGE UPLOAD =======================
+      case 10:
+        return (
+          <ProductImageStep
+            productData={productData}
+            onConfirm={(data) => {
+              setProductImagesData(data);
+              setActiveStep(11);
+            }}
+          />
+        );
+
+      // ======================= SUMMARY =======================
       default:
         return (
           <div className="max-w-5xl mx-auto space-y-6">
-            <h3 className="text-yellow-400 text-3xl font-bold mb-6">
+            <h3 className="text-yellow-400 text-3xl font-bold">
               Product Summary
             </h3>
 
-            {/* Category */}
-            <div className="bg-gray-900 p-6 rounded-2xl shadow-xl">
-              <h4 className="text-white font-semibold mb-2">Category:</h4>
-              <p className="text-gray-300">
-                {categoryData?.breadcrumb?.map((c) => c.name).join(" › ")}
-              </p>
-            </div>
+            <SummaryBlock title="Category">
+              {categoryData?.breadcrumb?.map((c) => c.name).join(" › ")}
+            </SummaryBlock>
 
-            {/* Brand */}
-            <div className="bg-gray-900 p-6 rounded-2xl shadow-xl">
-              <h4 className="text-white font-semibold mb-2">Brand:</h4>
-              <p className="text-gray-300">{brandData?.name}</p>
-            </div>
+            <SummaryBlock title="Brand">{brandData?.name}</SummaryBlock>
 
-            {/* Product Info */}
-            <div className="bg-gray-900 p-6 rounded-2xl shadow-xl">
-              <h4 className="text-white font-semibold mb-2">Product Info:</h4>
-              <pre className="text-gray-300">
-                {JSON.stringify(productData, null, 2)}
-              </pre>
-            </div>
+            <SummaryBlock title="Product Info">
+              <pre>{JSON.stringify(productData, null, 2)}</pre>
+            </SummaryBlock>
 
-            {/* Attributes */}
-            <div className="bg-gray-900 p-6 rounded-2xl shadow-xl">
-              <h4 className="text-white font-semibold mb-2">Attributes:</h4>
-              {attributesData.map((attr) => (
-                <div key={attr.id}>
-                  <p className="text-yellow-400 font-semibold">{attr.name}</p>
-                  <div className="flex gap-2 mt-1 flex-wrap">
-                    {attr.values.map((v) => (
-                      <span
-                        key={v.id}
-                        className="bg-gray-800 px-3 py-1 rounded-full text-white text-sm"
-                      >
-                        {v.value}
-                      </span>
-                    ))}
-                  </div>
+            <SummaryBlock title="Attributes">
+              {attributesData.map((a) => (
+                <div key={a.id}>
+                  <b>{a.name}</b>: {a.values.map((v) => v.value).join(", ")}
                 </div>
               ))}
-            </div>
+            </SummaryBlock>
 
-            {/* Variants */}
-            <div className="bg-gray-900 p-6 rounded-2xl shadow-xl">
-              <h4 className="text-white font-semibold mb-2">Variants:</h4>
-              {variantsData.map((v, idx) => (
-                <div key={idx} className="text-gray-300">
+            <SummaryBlock title="Variants">
+              {variantsData.map((v, i) => (
+                <div key={i}>
                   SKU: {v.sku} | Stock: {v.stock}
                 </div>
               ))}
-            </div>
+            </SummaryBlock>
 
-            {/* Pricing */}
-            <div className="bg-gray-900 p-6 rounded-2xl shadow-xl">
-              <h4 className="text-white font-semibold mb-2">Pricing:</h4>
-              <pre className="text-gray-300">
-                {JSON.stringify(pricingData, null, 2)}
-              </pre>
-            </div>
+            <SummaryBlock title="Pricing">
+              <pre>{JSON.stringify(pricingData, null, 2)}</pre>
+            </SummaryBlock>
 
-            {/* Features */}
-            <div className="bg-gray-900 p-6 rounded-2xl shadow-xl">
-              <h4 className="text-white font-semibold mb-2">Features:</h4>
-              {featuresData.length > 0 ? (
-                <ul className="text-gray-300 list-disc list-inside">
-                  {featuresData.map((f, idx) => (
-                    <li key={idx}>{f}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-gray-400">No features added</p>
-              )}
-            </div>
+            <SummaryBlock title="Features">
+              <ul>
+                {featuresData.map((f, i) => (
+                  <li key={i}>{f}</li>
+                ))}
+              </ul>
+            </SummaryBlock>
 
-            {/* Specifications */}
-            <div className="bg-gray-900 p-6 rounded-2xl shadow-xl">
-              <h4 className="text-white font-semibold mb-2">Specifications:</h4>
-              {specificationsData.length > 0 ? (
-                <ul className="text-gray-300 list-disc list-inside">
-                  {specificationsData.map((s, idx) => (
-                    <li key={idx}>
-                      {s.specKey}: {s.specValue}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-gray-400">No specifications added</p>
-              )}
-            </div>
+            <SummaryBlock title="Specifications">
+              {specificationsData.map((s, i) => (
+                <div key={i}>
+                  {s.specKey}: {s.specValue}
+                </div>
+              ))}
+            </SummaryBlock>
 
-            {/* Manufacturer Info */}
-            <div className="bg-gray-900 p-6 rounded-2xl shadow-xl">
-              <h4 className="text-white font-semibold mb-2">Manufacturer Info:</h4>
-              <p className="text-gray-300">
-                {manufacturerInfo || "No manufacturer info added"}
-              </p>
-            </div>
+            <SummaryBlock title="Manufacturer Info">{manufacturerData}</SummaryBlock>
 
-            {/* Final Confirm */}
+            <SummaryBlock title="Images">
+              Variant Images Uploaded ✔ <br />
+              Product Images Uploaded ✔
+            </SummaryBlock>
+
             <button
-              onClick={() => alert("All data ready to submit to backend")}
-              className="bg-yellow-400 hover:bg-yellow-500 text-black px-12 py-4 rounded-xl font-bold shadow-xl"
+              onClick={() => alert("READY TO PUBLISH PRODUCT")}
+              className="bg-yellow-400 px-12 py-4 rounded-xl font-bold"
             >
               Final Confirm
             </button>
@@ -244,9 +229,21 @@ export default function CreateProductLayout() {
   };
 
   return (
-    <div className="flex min-h-screen">
-      <SidebarSteps activeStep={activeStep} />
-      <div className="flex-1 p-8">{renderStep()}</div>
+    <div className="flex min-h-screen relative">
+      <SidebarSteps activeStep={activeStep} onStepClick={setActiveStep} />
+
+      {/* MAIN CONTENT */}
+      <div className="flex-1 p-8 relative z-20 pointer-events-auto">{renderStep()}</div>
+    </div>
+  );
+}
+
+// ======================= HELPER =======================
+function SummaryBlock({ title, children }) {
+  return (
+    <div className="bg-gray-900 p-6 rounded-xl shadow">
+      <h4 className="text-white font-semibold mb-2">{title}</h4>
+      <div className="text-gray-300">{children}</div>
     </div>
   );
 }
