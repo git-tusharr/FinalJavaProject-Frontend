@@ -14,7 +14,7 @@ const steps = [
   "Product Images"
 ];
 
-export default function SidebarSteps({ activeStep }) {
+export default function SidebarSteps({ activeStep, onStepClick }) {
   return (
     <aside className="w-72 min-h-screen bg-black border-r border-red-600/30 px-6 py-8 flex flex-col">
 
@@ -32,6 +32,7 @@ export default function SidebarSteps({ activeStep }) {
           return (
             <li
               key={index}
+              onClick={() => onStepClick && onStepClick(index)} // optional navigation
               className={`
                 flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-200 cursor-pointer
                 ${isActive ? "bg-red-600 text-white shadow-lg scale-105" : ""}
@@ -66,7 +67,7 @@ export default function SidebarSteps({ activeStep }) {
         })}
       </ul>
 
-      {/* FOOTER / OPTIONAL */}
+      {/* FOOTER */}
       <div className="mt-auto text-gray-600 text-xs text-center">
         Step {activeStep + 1} of {steps.length}
       </div>

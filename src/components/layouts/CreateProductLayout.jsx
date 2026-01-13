@@ -7,10 +7,13 @@ import AttributeStep from "../Products/AttributeStep";
 import VariantStep from "../Products/VariantStep";
 import VariantPricingStep from "../Products/VariantPricingStep";
 import ProductFeatureStep from "../Products/ProductFeatureStep";
+import ProductSpecificationStep from "../Products/ProductSpecificationStep";
+import ManufacturerInfoStep from "../Products/ManufacturerInfoStep"; // ✅ NEW
 
 export default function CreateProductLayout() {
   const [activeStep, setActiveStep] = useState(0);
 
+  // ======================= STATE =======================
   const [categoryData, setCategoryData] = useState(null);
   const [brandData, setBrandData] = useState(null);
   const [productData, setProductData] = useState(null);
@@ -18,10 +21,10 @@ export default function CreateProductLayout() {
   const [variantsData, setVariantsData] = useState([]);
   const [pricingData, setPricingData] = useState({});
   const [featuresData, setFeaturesData] = useState([]);
+  const [specificationsData, setSpecificationsData] = useState([]);
+  const [manufacturerInfo, setManufacturerInfo] = useState(""); // ✅ NEW
 
-  // =======================
-  // Render the current step
-  // =======================
+  // ======================= RENDER CURRENT STEP =======================
   const renderStep = () => {
     switch (activeStep) {
       case 0:
@@ -89,7 +92,6 @@ export default function CreateProductLayout() {
           />
         );
 
-      // ✅ Product Feature Step
       case 6:
         return (
           <ProductFeatureStep
@@ -101,9 +103,29 @@ export default function CreateProductLayout() {
           />
         );
 
-      // =======================
-      // SUMMARY STEP
-      // =======================
+      case 7:
+        return (
+          <ProductSpecificationStep
+            productData={productData}
+            onConfirm={(specs) => {
+              setSpecificationsData(specs);
+              setActiveStep(8);
+            }}
+          />
+        );
+
+      case 8:
+        return (
+          <ManufacturerInfoStep
+            productData={productData}
+            onConfirm={(content) => {
+              setManufacturerInfo(content);
+              setActiveStep(9);
+            }}
+          />
+        );
+
+      // ======================= SUMMARY STEP =======================
       default:
         return (
           <div className="max-w-5xl mx-auto space-y-6">
@@ -158,7 +180,7 @@ export default function CreateProductLayout() {
               <h4 className="text-white font-semibold mb-2">Variants:</h4>
               {variantsData.map((v, idx) => (
                 <div key={idx} className="text-gray-300">
-                  SKU: {v.sku} | Stock: {v.stock} | Price: {v.price}
+                  SKU: {v.sku} | Stock: {v.stock}
                 </div>
               ))}
             </div>
@@ -183,6 +205,30 @@ export default function CreateProductLayout() {
               ) : (
                 <p className="text-gray-400">No features added</p>
               )}
+            </div>
+
+            {/* Specifications */}
+            <div className="bg-gray-900 p-6 rounded-2xl shadow-xl">
+              <h4 className="text-white font-semibold mb-2">Specifications:</h4>
+              {specificationsData.length > 0 ? (
+                <ul className="text-gray-300 list-disc list-inside">
+                  {specificationsData.map((s, idx) => (
+                    <li key={idx}>
+                      {s.specKey}: {s.specValue}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-400">No specifications added</p>
+              )}
+            </div>
+
+            {/* Manufacturer Info */}
+            <div className="bg-gray-900 p-6 rounded-2xl shadow-xl">
+              <h4 className="text-white font-semibold mb-2">Manufacturer Info:</h4>
+              <p className="text-gray-300">
+                {manufacturerInfo || "No manufacturer info added"}
+              </p>
             </div>
 
             {/* Final Confirm */}
