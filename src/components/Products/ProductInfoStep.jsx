@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 
 export default function ProductInfoStep({ categoryData, brandData, onConfirm }) {
@@ -7,6 +7,20 @@ export default function ProductInfoStep({ categoryData, brandData, onConfirm }) 
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Generate slug automatically when name changes
+  useEffect(() => {
+    if (name) {
+      const generatedSlug = name
+        .toLowerCase()                     // lowercase
+        .trim()                             // remove leading/trailing spaces
+        .replace(/[^a-z0-9\s-]/g, "")      // remove special chars
+        .replace(/\s+/g, "-");             // replace spaces with hyphens
+      setSlug(generatedSlug);
+    } else {
+      setSlug("");
+    }
+  }, [name]);
 
   const handleSubmit = async () => {
     if (!name || !slug || !categoryData || !brandData) {
@@ -23,7 +37,7 @@ export default function ProductInfoStep({ categoryData, brandData, onConfirm }) 
         slug,
         description,
         categoryId: categoryData.categoryId,
-        brandId: brandData.id || brandData.slug // use id if available
+        brandId: brandData.id // always use ID for backend
       };
 
       const res = await axios.post("http://localhost:8080/api/products", payload);
@@ -57,10 +71,10 @@ export default function ProductInfoStep({ categoryData, brandData, onConfirm }) 
 
         <input
           type="text"
-          placeholder="Slug (unique identifier)"
+          placeholder="Slug (auto-generated)"
           value={slug}
-          onChange={(e) => setSlug(e.target.value)}
-          className="bg-gray-900 text-white border border-gray-700 rounded-xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-red-600"
+          readOnly
+          className="bg-gray-800 text-gray-400 border border-gray-700 rounded-xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-red-600"
         />
 
         <textarea

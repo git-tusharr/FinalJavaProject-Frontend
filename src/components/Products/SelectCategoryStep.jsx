@@ -1,105 +1,98 @@
-import { useState } from "react";
-import { getCategoryBreadcrumb } from "../../api/categoryApi";
+import { useEffect, useState } from "react";
+import {
+  getRootCategories,
+  getSubCategories,
+  getCategoryBreadcrumb
+} from "../../api/categoryApi";
 
 export default function SelectCategoryStep({ onConfirm }) {
-  const [categoryId, setCategoryId] = useState("");
+
+  const [categories, setCategories] = useState([]);
+  const [selectedId, setSelectedId] = useState(null);
   const [breadcrumb, setBreadcrumb] = useState([]);
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const fetchBreadcrumb = async () => {
-    if (!categoryId) {
-      setError("Category ID is required");
-      return;
-    }
+  // Load root categories on mount
+  useEffect(() => {
+    loadCategories();
+  }, []);
 
+  const loadCategories = async (parentId = null) => {
     setLoading(true);
-    setError("");
-    setBreadcrumb([]);
-
     try {
-      const res = await getCategoryBreadcrumb(categoryId);
-      setBreadcrumb(res.data);
-    } catch {
-      setError("Invalid category ID");
+      const res = parentId ? await getSubCategories(parentId) : await getRootCategories();
+      setCategories(res.data);
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <div className="max-w-4xl mx-auto bg-black border border-red-600/30 rounded-2xl p-10 shadow-2xl">
+  const handleSelect = async (category) => {
+    setSelectedId(category.id);
 
-      {/* TITLE */}
-      <h2 className="text-3xl font-extrabold text-yellow-400 mb-2">
+    // Fetch breadcrumb
+    const bc = await getCategoryBreadcrumb(category.id);
+    setBreadcrumb(bc.data);
+
+    // Load children for next selection
+    loadCategories(category.id);
+  };
+
+  return (
+    <div className="max-w-5xl mx-auto bg-black border border-red-600/30 rounded-2xl p-10">
+
+      <h2 className="text-3xl font-extrabold text-yellow-400 mb-6">
         Select Product Category
       </h2>
-      <p className="text-gray-400 mb-8">
-        Enter category ID to fetch its breadcrumb path
-      </p>
-
-      {/* INPUT */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <input
-          type="number"
-          placeholder="Enter Category ID"
-          value={categoryId}
-          onChange={(e) => setCategoryId(e.target.value)}
-          className="flex-1 bg-gray-900 text-white border border-gray-700 rounded-xl px-5 py-4
-                     focus:outline-none focus:ring-2 focus:ring-red-600"
-        />
-
-        <button
-          onClick={fetchBreadcrumb}
-          className="bg-red-600 hover:bg-red-700 transition-all px-8 py-4 rounded-xl
-                     font-semibold shadow-xl hover:scale-105"
-        >
-          Fetch Category
-        </button>
-      </div>
-
-      {/* STATUS */}
-      {loading && (
-        <p className="mt-4 text-yellow-400 animate-pulse">
-          Fetching category...
-        </p>
-      )}
-
-      {error && (
-        <p className="mt-4 text-red-500 font-medium">
-          {error}
-        </p>
-      )}
 
       {/* BREADCRUMB */}
       {breadcrumb.length > 0 && (
-        <div className="mt-10 bg-gray-900 border border-gray-700 rounded-xl p-6">
+        <div className="mb-8 text-lg font-semibold text-white">
+          {breadcrumb.map((c, i) => (
+            <span key={c.id}>
+              <span className="text-yellow-400">{c.name}</span>
+              {i < breadcrumb.length - 1 && (
+                <span className="mx-2 text-gray-500">›</span>
+              )}
+            </span>
+          ))}
+        </div>
+      )}
 
-          <p className="text-sm text-gray-400 mb-3">
-            Selected Category Path
-          </p>
+      {/* CATEGORY LIST */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        {categories.map((cat) => (
+          <button
+            key={cat.id}
+            onClick={() => handleSelect(cat)}
+            className="bg-gray-900 border border-gray-700 text-white
+                       px-6 py-4 rounded-xl hover:border-red-500
+                       hover:scale-105 transition"
+          >
+            {cat.name}
+          </button>
+        ))}
+      </div>
 
-          <div className="text-lg font-semibold text-white mb-6">
-            {breadcrumb.map((c, i) => (
-              <span key={c.id}>
-                <span className="text-yellow-400">{c.name}</span>
-                {i < breadcrumb.length - 1 && (
-                  <span className="mx-2 text-gray-500">›</span>
-                )}
-              </span>
-            ))}
-          </div>
+      {loading && (
+        <p className="mt-6 text-yellow-400 animate-pulse">
+          Loading categories...
+        </p>
+      )}
 
+      {/* CONFIRM BUTTON */}
+      {selectedId && (
+        <div className="mt-10">
           <button
             onClick={() =>
               onConfirm({
-                categoryId: breadcrumb[breadcrumb.length - 1].id,
+                categoryId: selectedId,
                 breadcrumb
               })
             }
             className="bg-green-500 hover:bg-green-600 text-black
-                       px-10 py-4 rounded-xl font-bold
-                       transition-all hover:scale-105 shadow-xl"
+                       px-12 py-4 rounded-xl font-bold shadow-xl
+                       hover:scale-105 transition"
           >
             Confirm Category
           </button>

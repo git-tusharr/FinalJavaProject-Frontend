@@ -1,84 +1,79 @@
 import React, { useState } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { uploadImages } from "../../api/productImageApi";
+import { X } from "lucide-react";
 
 export default function VariantImageStep({ productData, variants, onConfirm }) {
   const [selectedVariant, setSelectedVariant] = useState(variants[0] || null);
-  const [selectedFiles, setSelectedFiles] = useState([]);
   const [images, setImages] = useState([]);
   const [uploading, setUploading] = useState(false);
 
-  // Handle file selection
   const handleFilesChange = (e) => {
-    const filesArray = Array.from(e.target.files);
-    const newImages = filesArray.map((file, idx) => ({
+    const files = Array.from(e.target.files);
+    const mapped = files.map((file, idx) => ({
       id: Date.now() + idx,
       file,
       preview: URL.createObjectURL(file),
     }));
-    setImages((prev) => [...prev, ...newImages]);
-    setSelectedFiles((prev) => [...prev, ...filesArray]);
+    setImages((prev) => [...prev, ...mapped]);
   };
 
-  // Handle drag-and-drop
+  const handleRemove = (id) => {
+    setImages((prev) => prev.filter((img) => img.id !== id));
+  };
+
   const handleDragEnd = (result) => {
     if (!result.destination) return;
     const reordered = Array.from(images);
     const [removed] = reordered.splice(result.source.index, 1);
     reordered.splice(result.destination.index, 0, removed);
     setImages(reordered);
-
-    // Reorder files array too
-    const reorderedFiles = reordered.map((img) => img.file);
-    setSelectedFiles(reorderedFiles);
   };
 
-  // Upload images to backend
   const handleUpload = async () => {
-    if (!selectedFiles.length) {
-      alert("Please select images first!");
-      return;
-    }
-
-    if (!productData?.id) {
-      alert("Product ID not available!");
-      return;
-    }
+    if (!images.length) return alert("Please select images");
 
     try {
       setUploading(true);
-      const result = await uploadImages({
+      const res = await uploadImages({
         productId: productData.id,
         variantId: selectedVariant?.id,
-        files: selectedFiles,
+        files: images.map((i) => i.file),
       });
-
-      alert("Images uploaded successfully!");
-      onConfirm(result); // send uploaded images back to parent
+      onConfirm(res);
     } catch (err) {
-      console.error(err);
-      alert("Upload failed: " + err.message);
+      alert(err.message);
     } finally {
       setUploading(false);
     }
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      <h3 className="text-yellow-400 text-2xl font-bold">Upload Variant Images</h3>
+    <div className="max-w-5xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
+        <h3 className="text-2xl font-bold text-yellow-400">
+          Variant Image Upload
+        </h3>
+        <p className="text-gray-400 mt-1">
+          Upload, reorder, and assign images to a product variant
+        </p>
+      </div>
 
       {/* Variant Selector */}
       {variants.length > 1 && (
-        <div>
-          <label className="text-white mr-2">Select Variant:</label>
+        <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
+          <label className="block text-sm text-gray-400 mb-2">
+            Select Variant
+          </label>
           <select
-            value={selectedVariant?.id || ""}
+            value={selectedVariant?.id}
             onChange={(e) =>
               setSelectedVariant(
                 variants.find((v) => v.id === Number(e.target.value))
               )
             }
-            className="px-3 py-2 rounded bg-gray-800 text-white"
+            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-yellow-400"
           >
             {variants.map((v) => (
               <option key={v.id} value={v.id}>
@@ -89,17 +84,23 @@ export default function VariantImageStep({ productData, variants, onConfirm }) {
         </div>
       )}
 
-      {/* File Input */}
-      <div>
+      {/* Upload Area */}
+      <label className="block bg-gray-900 border border-dashed border-gray-700 rounded-xl p-8 text-center cursor-pointer hover:border-yellow-400 transition">
         <input
           type="file"
           multiple
           onChange={handleFilesChange}
-          className="text-white"
+          className="hidden"
         />
-      </div>
+        <p className="text-gray-300 font-medium">
+          Click to upload images
+        </p>
+        <p className="text-gray-500 text-sm mt-1">
+          PNG, JPG up to any size
+        </p>
+      </label>
 
-      {/* Drag-and-drop image previews */}
+      {/* Image Preview Grid */}
       {images.length > 0 && (
         <DragDropContext onDragEnd={handleDragEnd}>
           <Droppable droppableId="images" direction="horizontal">
@@ -107,22 +108,34 @@ export default function VariantImageStep({ productData, variants, onConfirm }) {
               <div
                 ref={provided.innerRef}
                 {...provided.droppableProps}
-                className="flex gap-4 overflow-x-auto py-4"
+                className="flex gap-4 overflow-x-auto pb-2"
               >
-                {images.map((img, idx) => (
-                  <Draggable key={img.id} draggableId={img.id.toString()} index={idx}>
+                {images.map((img, index) => (
+                  <Draggable
+                    key={img.id}
+                    draggableId={img.id.toString()}
+                    index={index}
+                  >
                     {(provided) => (
                       <div
                         ref={provided.innerRef}
                         {...provided.draggableProps}
                         {...provided.dragHandleProps}
-                        className="relative w-32 h-32 border border-gray-700 rounded overflow-hidden"
+                        className="relative group w-36 h-36 rounded-xl overflow-hidden border border-gray-700"
                       >
                         <img
                           src={img.preview}
-                          alt="preview"
+                          alt=""
                           className="w-full h-full object-cover"
                         />
+
+                        {/* Remove button */}
+                        <button
+                          onClick={() => handleRemove(img.id)}
+                          className="absolute top-2 right-2 bg-black/70 p-1 rounded-full opacity-0 group-hover:opacity-100 transition"
+                        >
+                          <X size={16} className="text-white" />
+                        </button>
                       </div>
                     )}
                   </Draggable>
@@ -134,14 +147,16 @@ export default function VariantImageStep({ productData, variants, onConfirm }) {
         </DragDropContext>
       )}
 
-      {/* Upload Button */}
-      <button
-        onClick={handleUpload}
-        disabled={uploading}
-        className="bg-yellow-400 hover:bg-yellow-500 px-6 py-3 rounded font-bold text-black"
-      >
-        {uploading ? "Uploading..." : "Upload Images"}
-      </button>
+      {/* Action */}
+      <div className="flex justify-end">
+        <button
+          onClick={handleUpload}
+          disabled={uploading}
+          className="bg-yellow-400 hover:bg-yellow-500 disabled:opacity-50 px-8 py-3 rounded-xl font-bold text-black transition"
+        >
+          {uploading ? "Uploading..." : "Upload Images"}
+        </button>
+      </div>
     </div>
   );
 }

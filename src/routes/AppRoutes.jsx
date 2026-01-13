@@ -1,37 +1,36 @@
 import { Routes, Route } from "react-router-dom";
+import Home from "../pages/Home";
+import Shop from "../pages/Shop";          // ✅ ADD
+import ProductPage from "../pages/ProductPage"; // ✅ ADD
+
 import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
 import ForgotPassword from "../pages/auth/ForgotPassword";
+import ResetPassword from "../pages/auth/ResetPassword";
 import EmailOtpVerification from "../pages/auth/EmailOtpVerification";
 import PhoneOtpVerification from "../pages/auth/PhoneOtpVerification";
-import ResetPassword from "../pages/auth/ResetPassword"; // ✅ ADD THIS
-import Home from "../pages/Home";
 import CreateProductPage from "../pages/admin/products/CreateProductPage";
 
 export default function AppRoutes() {
   return (
     <Routes>
-      {/* 🏠 Home */}
+      {/* HOME */}
       <Route path="/" element={<Home />} />
 
-      {/* 🔐 Auth */}
+      {/* SHOP */}
+      <Route path="/shop" element={<Shop />} />          {/* 👈 HERE */}
+      <Route path="/product/:slug" element={<ProductPage />} />
+
+      {/* AUTH */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
-
-      {/* 🔑 Password Reset */}
       <Route path="/reset-password" element={<ResetPassword />} />
-
-      {/* 🔢 OTP Verification */}
       <Route path="/email-otp" element={<EmailOtpVerification />} />
       <Route path="/phone-otp" element={<PhoneOtpVerification />} />
 
-
       {/* ADMIN */}
-      <Route
-        path="/admin/products/create"
-        element={<CreateProductPage />}
-      />
+      <Route path="/admin/products/create" element={<CreateProductPage />} />
     </Routes>
   );
 }
