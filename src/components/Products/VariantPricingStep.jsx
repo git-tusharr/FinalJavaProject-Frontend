@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import axios from "axios";
 
 export default function VariantPricingStep({ variants, onConfirm }) {
@@ -6,144 +6,179 @@ export default function VariantPricingStep({ variants, onConfirm }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // 🔢 Calculate final price
+  /* ===========================
+     Price calculation (safe)
+  ============================ */
   const calculateFinalPrice = (mrp, type, value) => {
-    if (!type || !value) return mrp;
+    if (!type || !value || value <= 0) return mrp;
 
-    const discount =
-      type === "PERCENTAGE"
-        ? (mrp * value) / 100
-        : value;
+    let discount = 0;
 
-    return Math.max(mrp - discount, 0);
+    if (type === "PERCENTAGE") {
+      discount = Math.min((mrp * value) / 100, mrp);
+    } else {
+      discount = Math.min(value, mrp);
+    }
+
+    return Math.round((mrp - discount) * 100) / 100;
   };
 
-  // 🔄 Handle input change
+  /* ===========================
+     Handle change
+  ============================ */
   const handleChange = (variantId, field, value) => {
-    setPricing((prev) => {
-      const current = prev[variantId] || {};
-      return {
-        ...prev,
-        [variantId]: {
-          ...current,
-          [field]: value,
-        },
-      };
-    });
+    setPricing((prev) => ({
+      ...prev,
+      [variantId]: {
+        ...prev[variantId],
+        [field]: value,
+      },
+    }));
   };
 
-  // 💾 Save pricing
+  /* ===========================
+     Save pricing (optimized)
+  ============================ */
   const savePricing = async () => {
     setLoading(true);
     setError("");
 
     try {
-      for (const v of variants) {
+      const requests = variants.map((v) => {
         const p = pricing[v.id];
-        if (!p) continue;
+        if (!p || !p.discountType) return null;
 
-        await axios.post(
+        return axios.post(
           `http://localhost:8080/api/variants/${v.id}/pricing/price`,
           {
-            mrp: v.price,               // 👈 auto from variant
+            mrp: v.price,
             sellingPrice: calculateFinalPrice(
               v.price,
               p.discountType,
               Number(p.discountValue)
             ),
             discountType: p.discountType,
-            discountValue: Number(p.discountValue),
+            discountValue: Number(p.discountValue) || 0,
           }
         );
-      }
+      });
 
+      await Promise.all(requests.filter(Boolean));
       onConfirm(pricing);
     } catch (err) {
       console.error(err);
-      setError("Failed to save pricing");
+      setError("❌ Failed to save pricing. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
+  /* ===========================
+     UI
+  ============================ */
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      <h2 className="text-3xl font-bold text-yellow-400">
-        Variant Pricing
-      </h2>
+    <div className="max-w-6xl mx-auto space-y-8">
+      <div className="flex justify-between items-center">
+        <h2 className="text-3xl font-bold text-yellow-400">
+          Variant Pricing
+        </h2>
 
-      {error && <p className="text-red-500">{error}</p>}
+        <span className="text-gray-400 text-sm">
+          {variants.length} variants
+        </span>
+      </div>
 
-      <table className="w-full border border-gray-700 rounded-xl overflow-hidden">
-        <thead className="bg-gray-800">
-          <tr>
-            <th className="px-4 py-2 text-gray-300">SKU</th>
-            <th className="px-4 py-2 text-gray-300">Base Price</th>
-            <th className="px-4 py-2 text-gray-300">Discount Type</th>
-            <th className="px-4 py-2 text-gray-300">Discount Value</th>
-            <th className="px-4 py-2 text-gray-300">Final Price</th>
-          </tr>
-        </thead>
+      {error && (
+        <div className="bg-red-900/30 border border-red-700 text-red-400 px-4 py-3 rounded-lg">
+          {error}
+        </div>
+      )}
 
-        <tbody>
-          {variants.map((v) => {
-            const p = pricing[v.id] || {};
-            const finalPrice = calculateFinalPrice(
-              v.price,
-              p.discountType,
-              Number(p.discountValue)
-            );
+      {/* Variant Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {variants.map((v) => {
+          const p = pricing[v.id] || {};
+          const finalPrice = calculateFinalPrice(
+            v.price,
+            p.discountType,
+            Number(p.discountValue)
+          );
 
-            return (
-              <tr key={v.id} className="border-t border-gray-700">
-                <td className="px-4 py-2 text-white">{v.sku}</td>
+          return (
+            <div
+              key={v.id}
+              className="bg-gray-900 border border-gray-700 rounded-2xl p-6 space-y-4"
+            >
+              {/* Header */}
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-gray-400 text-sm">SKU</p>
+                  <p className="text-white font-semibold">{v.sku}</p>
+                </div>
 
-                <td className="px-4 py-2 text-white">
-                  ₹{v.price}
-                </td>
+                <div className="text-right">
+                  <p className="text-gray-400 text-sm">Base Price</p>
+                  <p className="text-white font-bold">₹{v.price}</p>
+                </div>
+              </div>
 
-                <td className="px-4 py-2">
+              {/* Discount */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-gray-400 text-sm mb-1 block">
+                    Discount Type
+                  </label>
                   <select
                     value={p.discountType || ""}
                     onChange={(e) =>
                       handleChange(v.id, "discountType", e.target.value)
                     }
-                    className="bg-gray-800 text-white rounded-lg px-3 py-2 w-full"
+                    className="w-full bg-gray-800 text-white rounded-lg px-3 py-2"
                   >
                     <option value="">None</option>
                     <option value="PERCENTAGE">Percentage (%)</option>
                     <option value="FLAT">Flat (₹)</option>
                   </select>
-                </td>
+                </div>
 
-                <td className="px-4 py-2">
+                <div>
+                  <label className="text-gray-400 text-sm mb-1 block">
+                    Discount Value
+                  </label>
                   <input
                     type="number"
+                    min="0"
+                    disabled={!p.discountType}
                     value={p.discountValue || ""}
                     onChange={(e) =>
                       handleChange(v.id, "discountValue", e.target.value)
                     }
-                    className="bg-gray-800 text-white rounded-lg px-3 py-2 w-full"
-                    placeholder="Enter discount"
+                    className="w-full bg-gray-800 text-white rounded-lg px-3 py-2 disabled:opacity-40"
+                    placeholder="Enter value"
                   />
-                </td>
+                </div>
+              </div>
 
-                <td className="px-4 py-2 text-green-400 font-bold">
+              {/* Final Price */}
+              <div className="flex justify-between items-center pt-4 border-t border-gray-700">
+                <span className="text-gray-400">Final Price</span>
+                <span className="text-green-400 text-xl font-bold">
                   ₹{finalPrice}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
 
-      <div className="flex justify-end">
+      {/* Action */}
+      <div className="flex justify-end pt-6">
         <button
           onClick={savePricing}
           disabled={loading}
-          className="bg-yellow-400 hover:bg-yellow-500 text-black px-10 py-4 rounded-xl font-bold transition"
+          className="bg-yellow-400 hover:bg-yellow-500 disabled:opacity-60 text-black px-12 py-4 rounded-xl font-bold transition"
         >
-          {loading ? "Saving..." : "Save Pricing"}
+          {loading ? "Saving Pricing..." : "Save Pricing"}
         </button>
       </div>
     </div>

@@ -1,7 +1,8 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import SidebarSteps from "./SidebarSteps";
 
-// Step components
+// Steps
 import SelectCategoryStep from "../Products/SelectCategoryStep";
 import SelectBrandStep from "../Products/SelectBrandStep";
 import ProductInfoStep from "../Products/ProductInfoStep";
@@ -12,9 +13,10 @@ import ProductFeatureStep from "../Products/ProductFeatureStep";
 import ProductSpecificationStep from "../Products/ProductSpecificationStep";
 import ManufacturerInfoStep from "../Products/ManufacturerInfoStep";
 import VariantImageStep from "../Products/VariantImageStep";
-import ProductImageStep from "../Products/ProductImageStep"; // new working step
+import ProductImageStep from "../Products/ProductImageStep";
 
 export default function CreateProductLayout() {
+  const navigate = useNavigate();
   const [activeStep, setActiveStep] = useState(0);
 
   // ======================= STATE =======================
@@ -30,60 +32,53 @@ export default function CreateProductLayout() {
   const [variantImagesData, setVariantImagesData] = useState([]);
   const [productImagesData, setProductImagesData] = useState([]);
 
-  // ======================= STEP RENDER =======================
+  /* =======================
+     RESET FOR NEW PRODUCT
+  ======================== */
+  const resetFlow = () => {
+    setActiveStep(0);
+    setCategoryData(null);
+    setBrandData(null);
+    setProductData(null);
+    setAttributesData([]);
+    setVariantsData([]);
+    setPricingData({});
+    setFeaturesData([]);
+    setSpecificationsData([]);
+    setManufacturerData("");
+    setVariantImagesData([]);
+    setProductImagesData([]);
+  };
+
+  /* =======================
+     STEP RENDER
+  ======================== */
   const renderStep = () => {
     switch (activeStep) {
       case 0:
-        return (
-          <SelectCategoryStep
-            onConfirm={(data) => {
-              setCategoryData(data);
-              setActiveStep(1);
-            }}
-          />
-        );
+        return <SelectCategoryStep onConfirm={(d) => { setCategoryData(d); setActiveStep(1); }} />;
 
       case 1:
-        return (
-          <SelectBrandStep
-            onConfirm={(brand) => {
-              setBrandData(brand);
-              setActiveStep(2);
-            }}
-          />
-        );
+        return <SelectBrandStep onConfirm={(d) => { setBrandData(d); setActiveStep(2); }} />;
 
       case 2:
         return (
           <ProductInfoStep
             categoryData={categoryData}
             brandData={brandData}
-            onConfirm={(product) => {
-              setProductData(product);
-              setActiveStep(3);
-            }}
+            onConfirm={(d) => { setProductData(d); setActiveStep(3); }}
           />
         );
 
       case 3:
-        return (
-          <AttributeStep
-            onConfirm={(attrs) => {
-              setAttributesData(attrs);
-              setActiveStep(4);
-            }}
-          />
-        );
+        return <AttributeStep onConfirm={(d) => { setAttributesData(d); setActiveStep(4); }} />;
 
       case 4:
         return (
           <VariantStep
             productData={productData}
             attributesData={attributesData}
-            onConfirm={(variants) => {
-              setVariantsData(variants);
-              setActiveStep(5);
-            }}
+            onConfirm={(d) => { setVariantsData(d); setActiveStep(5); }}
           />
         );
 
@@ -91,10 +86,7 @@ export default function CreateProductLayout() {
         return (
           <VariantPricingStep
             variants={variantsData}
-            onConfirm={(pricing) => {
-              setPricingData(pricing);
-              setActiveStep(6);
-            }}
+            onConfirm={(d) => { setPricingData(d); setActiveStep(6); }}
           />
         );
 
@@ -102,10 +94,7 @@ export default function CreateProductLayout() {
         return (
           <ProductFeatureStep
             productData={productData}
-            onConfirm={(features) => {
-              setFeaturesData(features);
-              setActiveStep(7);
-            }}
+            onConfirm={(d) => { setFeaturesData(d); setActiveStep(7); }}
           />
         );
 
@@ -113,10 +102,7 @@ export default function CreateProductLayout() {
         return (
           <ProductSpecificationStep
             productData={productData}
-            onConfirm={(specs) => {
-              setSpecificationsData(specs);
-              setActiveStep(8);
-            }}
+            onConfirm={(d) => { setSpecificationsData(d); setActiveStep(8); }}
           />
         );
 
@@ -124,126 +110,126 @@ export default function CreateProductLayout() {
         return (
           <ManufacturerInfoStep
             productData={productData}
-            onConfirm={(content) => {
-              setManufacturerData(content);
-              setActiveStep(9);
-            }}
+            onConfirm={(d) => { setManufacturerData(d); setActiveStep(9); }}
           />
         );
 
-      // ======================= VARIANT IMAGE UPLOAD =======================
       case 9:
         return (
           <VariantImageStep
             productData={productData}
             variants={variantsData}
-            onConfirm={(data) => {
-              setVariantImagesData(data);
-              setActiveStep(10);
-            }}
+            onConfirm={(d) => { setVariantImagesData(d); setActiveStep(10); }}
           />
         );
 
-      // ======================= PRODUCT IMAGE UPLOAD =======================
       case 10:
         return (
           <ProductImageStep
             productData={productData}
-            onConfirm={(data) => {
-              setProductImagesData(data);
-              setActiveStep(11);
-            }}
+            onConfirm={(d) => { setProductImagesData(d); setActiveStep(11); }}
           />
         );
 
-      // ======================= SUMMARY =======================
+      /* =======================
+         SUMMARY
+      ======================== */
       default:
         return (
-          <div className="max-w-5xl mx-auto space-y-6">
-            <h3 className="text-yellow-400 text-3xl font-bold">
-              Product Summary
-            </h3>
+          <div className="max-w-6xl mx-auto space-y-8">
+            <h2 className="text-3xl font-bold text-yellow-400">
+              Product Created Successfully 🎉
+            </h2>
 
-            <SummaryBlock title="Category">
-              {categoryData?.breadcrumb?.map((c) => c.name).join(" › ")}
-            </SummaryBlock>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <SummaryCard title="Category">
+                {categoryData?.breadcrumb?.map((c) => c.name).join(" › ")}
+              </SummaryCard>
 
-            <SummaryBlock title="Brand">{brandData?.name}</SummaryBlock>
+              <SummaryCard title="Brand">{brandData?.name}</SummaryCard>
 
-            <SummaryBlock title="Product Info">
-              <pre>{JSON.stringify(productData, null, 2)}</pre>
-            </SummaryBlock>
+              <SummaryCard title="Product">
+                <p className="font-semibold">{productData?.name}</p>
+                <p className="text-sm text-gray-400">{productData?.description}</p>
+              </SummaryCard>
 
-            <SummaryBlock title="Attributes">
-              {attributesData.map((a) => (
-                <div key={a.id}>
-                  <b>{a.name}</b>: {a.values.map((v) => v.value).join(", ")}
-                </div>
-              ))}
-            </SummaryBlock>
-
-            <SummaryBlock title="Variants">
-              {variantsData.map((v, i) => (
-                <div key={i}>
-                  SKU: {v.sku} | Stock: {v.stock}
-                </div>
-              ))}
-            </SummaryBlock>
-
-            <SummaryBlock title="Pricing">
-              <pre>{JSON.stringify(pricingData, null, 2)}</pre>
-            </SummaryBlock>
-
-            <SummaryBlock title="Features">
-              <ul>
-                {featuresData.map((f, i) => (
-                  <li key={i}>{f}</li>
+              <SummaryCard title="Variants">
+                {variantsData.map((v) => (
+                  <div key={v.id}>
+                    SKU: <b>{v.sku}</b> · Stock: {v.stock}
+                  </div>
                 ))}
-              </ul>
-            </SummaryBlock>
+              </SummaryCard>
 
-            <SummaryBlock title="Specifications">
-              {specificationsData.map((s, i) => (
-                <div key={i}>
-                  {s.specKey}: {s.specValue}
-                </div>
-              ))}
-            </SummaryBlock>
+              <SummaryCard title="Features">
+                <ul className="list-disc ml-4">
+                  {featuresData.map((f, i) => <li key={i}>{f}</li>)}
+                </ul>
+              </SummaryCard>
 
-            <SummaryBlock title="Manufacturer Info">{manufacturerData}</SummaryBlock>
+              <SummaryCard title="Specifications">
+                {specificationsData.map((s, i) => (
+                  <div key={i}>{s.specKey}: {s.specValue}</div>
+                ))}
+              </SummaryCard>
 
-            <SummaryBlock title="Images">
-              Variant Images Uploaded ✔ <br />
-              Product Images Uploaded ✔
-            </SummaryBlock>
+              <SummaryCard title="Manufacturer Info">
+                {manufacturerData}
+              </SummaryCard>
 
-            <button
-              onClick={() => alert("READY TO PUBLISH PRODUCT")}
-              className="bg-yellow-400 px-12 py-4 rounded-xl font-bold"
-            >
-              Final Confirm
-            </button>
+              <SummaryCard title="Images">
+                <span className="text-green-400 font-semibold">
+                  ✔ Product & Variant Images Uploaded
+                </span>
+              </SummaryCard>
+            </div>
+
+            {/* ACTIONS */}
+            <div className="flex flex-wrap gap-4 justify-end pt-6">
+              <button
+                onClick={resetFlow}
+                className="bg-gray-700 hover:bg-gray-600 px-8 py-3 rounded-xl font-bold"
+              >
+                ➕ Add Another Product
+              </button>
+
+              <button
+                onClick={() => navigate("/")}
+                className="bg-gray-700 hover:bg-gray-600 px-8 py-3 rounded-xl font-bold"
+              >
+                🏠 Go to Home
+              </button>
+
+              <button
+                onClick={() => alert("Product Published")}
+                className="bg-yellow-400 hover:bg-yellow-500 px-10 py-3 rounded-xl font-bold text-black"
+              >
+                🚀 Publish Product
+              </button>
+            </div>
           </div>
         );
     }
   };
 
   return (
-    <div className="flex min-h-screen relative">
+    <div className="flex min-h-screen">
       <SidebarSteps activeStep={activeStep} onStepClick={setActiveStep} />
-
-      {/* MAIN CONTENT */}
-      <div className="flex-1 p-8 relative z-20 pointer-events-auto">{renderStep()}</div>
+      <div className="flex-1 p-8">{renderStep()}</div>
     </div>
   );
 }
 
-// ======================= HELPER =======================
-function SummaryBlock({ title, children }) {
+/* =======================
+   SUMMARY CARD
+======================= */
+function SummaryCard({ title, children }) {
   return (
-    <div className="bg-gray-900 p-6 rounded-xl shadow">
+    <div className="bg-gray-900 border border-gray-800 p-6 rounded-xl">
       <h4 className="text-white font-semibold mb-2">{title}</h4>
-      <div className="text-gray-300">{children}</div>
+      <div className="text-gray-300 text-sm space-y-1">
+        {children}
+      </div>
     </div>
   );
 }

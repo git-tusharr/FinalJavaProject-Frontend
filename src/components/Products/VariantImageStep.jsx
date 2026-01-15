@@ -1,53 +1,100 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { uploadImages } from "../../api/productImageApi";
 import { X } from "lucide-react";
 
 export default function VariantImageStep({ productData, variants, onConfirm }) {
   const [selectedVariant, setSelectedVariant] = useState(variants[0] || null);
-  const [images, setImages] = useState([]);
+
+  // 🔑 images stored per variant
+  const [variantImages, setVariantImages] = useState({});
   const [uploading, setUploading] = useState(false);
 
+  /* ===========================
+     Helpers
+  ============================ */
+  const images = variantImages[selectedVariant?.id] || [];
+
+  /* ===========================
+     File selection
+  ============================ */
   const handleFilesChange = (e) => {
+    if (!selectedVariant) return;
+
     const files = Array.from(e.target.files);
     const mapped = files.map((file, idx) => ({
-      id: Date.now() + idx,
+      id: `${Date.now()}-${idx}`,
       file,
       preview: URL.createObjectURL(file),
     }));
-    setImages((prev) => [...prev, ...mapped]);
+
+    setVariantImages((prev) => ({
+      ...prev,
+      [selectedVariant.id]: [
+        ...(prev[selectedVariant.id] || []),
+        ...mapped,
+      ],
+    }));
   };
 
+  /* ===========================
+     Remove image
+  ============================ */
   const handleRemove = (id) => {
-    setImages((prev) => prev.filter((img) => img.id !== id));
+    setVariantImages((prev) => ({
+      ...prev,
+      [selectedVariant.id]: prev[selectedVariant.id].filter(
+        (img) => img.id !== id
+      ),
+    }));
   };
 
+  /* ===========================
+     Drag reorder
+  ============================ */
   const handleDragEnd = (result) => {
-    if (!result.destination) return;
-    const reordered = Array.from(images);
+    if (!result.destination || !selectedVariant) return;
+
+    const reordered = Array.from(variantImages[selectedVariant.id] || []);
     const [removed] = reordered.splice(result.source.index, 1);
     reordered.splice(result.destination.index, 0, removed);
-    setImages(reordered);
+
+    setVariantImages((prev) => ({
+      ...prev,
+      [selectedVariant.id]: reordered,
+    }));
   };
 
+  /* ===========================
+     Upload
+  ============================ */
   const handleUpload = async () => {
+    if (!selectedVariant) return;
     if (!images.length) return alert("Please select images");
 
     try {
       setUploading(true);
+
       const res = await uploadImages({
         productId: productData.id,
-        variantId: selectedVariant?.id,
+        variantId: selectedVariant.id,
         files: images.map((i) => i.file),
       });
-      onConfirm(res);
+
+      onConfirm({
+        variantId: selectedVariant.id,
+        images: res,
+      });
     } catch (err) {
-      alert(err.message);
+      alert(err.message || "Upload failed");
     } finally {
       setUploading(false);
     }
   };
 
+  /* ===========================
+     UI
+  ============================ */
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       {/* Header */}
@@ -56,7 +103,7 @@ export default function VariantImageStep({ productData, variants, onConfirm }) {
           Variant Image Upload
         </h3>
         <p className="text-gray-400 mt-1">
-          Upload, reorder, and assign images to a product variant
+          Each variant has its own images
         </p>
       </div>
 
@@ -93,14 +140,14 @@ export default function VariantImageStep({ productData, variants, onConfirm }) {
           className="hidden"
         />
         <p className="text-gray-300 font-medium">
-          Click to upload images
-        </p>
-        <p className="text-gray-500 text-sm mt-1">
-          PNG, JPG up to any size
+          Upload images for{" "}
+          <span className="text-yellow-400 font-semibold">
+            {selectedVariant?.sku}
+          </span>
         </p>
       </label>
 
-      {/* Image Preview Grid */}
+      {/* Preview */}
       {images.length > 0 && (
         <DragDropContext onDragEnd={handleDragEnd}>
           <Droppable droppableId="images" direction="horizontal">
@@ -113,7 +160,7 @@ export default function VariantImageStep({ productData, variants, onConfirm }) {
                 {images.map((img, index) => (
                   <Draggable
                     key={img.id}
-                    draggableId={img.id.toString()}
+                    draggableId={img.id}
                     index={index}
                   >
                     {(provided) => (
@@ -129,7 +176,6 @@ export default function VariantImageStep({ productData, variants, onConfirm }) {
                           className="w-full h-full object-cover"
                         />
 
-                        {/* Remove button */}
                         <button
                           onClick={() => handleRemove(img.id)}
                           className="absolute top-2 right-2 bg-black/70 p-1 rounded-full opacity-0 group-hover:opacity-100 transition"

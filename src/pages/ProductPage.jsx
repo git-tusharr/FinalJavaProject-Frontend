@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 
 export default function ProductPage() {
@@ -6,103 +6,182 @@ export default function ProductPage() {
 
   const [product, setProduct] = useState(null);
   const [selectedVariant, setSelectedVariant] = useState(null);
+  const [mainImage, setMainImage] = useState("");
+  const [hoveredThumb, setHoveredThumb] = useState(null);
+  const [categories, setCategories] = useState([]);
 
-  useEffect(() => {
-    fetch(`http://localhost:8080/api/products/slug/${slug}`)
-      .then(res => res.json())
-      .then(data => {
-        setProduct(data);
-        if (data.variants?.length > 0) {
-          setSelectedVariant(data.variants[0]); // default variant
-        }
-      });
-  }, [slug]);
+ useEffect(() => {
+  fetch(`http://localhost:8080/api/products/slug/${slug}`)
+    .then(res => res.json())
+    .then(data => {
+      console.log("Product data:", data); // check if categoryId exists
+      setProduct(data);
+      if (data.variants?.length > 0) setSelectedVariant(data.variants[0]);
+      if (data.images?.length > 0) setMainImage(data.images[0]);
+
+      // Use the correct category ID field
+      const categoryId = data.categoryId || data.category?.id;
+      if (categoryId) {
+        fetch(`http://localhost:8080/api/categories/breadcrumb/${categoryId}`)
+          .then(res => res.json())
+          .then(catData => setCategories(catData))
+          .catch(err => console.error("Breadcrumb fetch error:", err));
+      } else {
+        console.warn("No category ID found for product", data.id);
+      } 
+    });
+}, [slug]);
 
   if (!product) {
     return <div className="text-center p-10 text-white">Loading...</div>;
   }
 
+  // Build breadcrumb
+  const breadcrumbs = [
+    { name: "Home", href: "/" },
+    ...categories.map(cat => ({ name: cat.name, href: `/category/${cat.slug}` })),
+    { name: product.name, href: `/product/${slug}` },
+  ];
+
   return (
-    <div className="max-w-7xl mx-auto p-8 text-white">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+    <div className="max-w-7xl mx-auto p-4">
+      
+      {/* BREADCRUMB */}
+      <nav className="text-gray-400 text-sm mb-4 flex flex-wrap gap-1">
+        {breadcrumbs.map((bc, idx) => (
+          <span key={idx} className="flex items-center">
+            {idx !== breadcrumbs.length - 1 ? (
+              <>
+                <Link to={bc.href} className="hover:underline">
+                  {bc.name}
+                </Link>
+                <span className="mx-1">/</span>
+              </>
+            ) : (
+              <span className="text-white font-semibold">{bc.name}</span>
+            )}
+          </span>
+        ))}
+      </nav>
 
-        {/* LEFT: IMAGES */}
-        <div>
-          <img
-            src={product.images?.[0] || "https://via.placeholder.com/500"}
-            alt={product.name}
-            className="rounded-xl w-full object-cover"
-          />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-          <div className="flex gap-4 mt-4">
-            {product.images?.map((img, i) => (
+        {/* LEFT: STICKY IMAGE SECTION */}
+        <div className="lg:sticky lg:top-4 lg:self-start p-8 bg-gray-900 rounded-xl">
+          <div className="flex gap-4">
+            
+            {/* Thumbnail Column */}
+            <div className="flex flex-col gap-3">
+              {product.images?.map((img, i) => (
+                <div
+                  key={i}
+                  className="relative"
+                  onMouseEnter={() => {
+                    setMainImage(img);
+                    setHoveredThumb(i);
+                  }}
+                  onMouseLeave={() => setHoveredThumb(null)}
+                >
+                  <img
+                    src={img}
+                    alt=""
+                    className={`h-16 w-16 object-cover rounded cursor-pointer border-2 transition-all ${
+                      mainImage === img
+                        ? "border-yellow-400"
+                        : "border-gray-700 hover:border-gray-500"
+                    }`}
+                  />
+                  
+                  {/* Enlarged thumbnail on hover */}
+                  {hoveredThumb === i && (
+                    <div className="absolute left-20 top-0 z-50 hidden lg:block">
+                      <img
+                        src={img}
+                        alt=""
+                        className="h-32 w-32 object-cover rounded-lg border-2 border-yellow-400 shadow-2xl bg-gray-900"
+                      />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Main Image */}
+            <div className="flex-1">
               <img
-                key={i}
-                src={img}
-                alt=""
-                className="h-20 w-20 object-cover rounded border border-gray-700"
+                src={mainImage || "https://via.placeholder.com/500"}
+                alt={product.name}
+                className="rounded-xl w-full object-cover transition-transform hover:scale-105"
               />
-            ))}
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-4 mt-6">
+            <button className="flex-1 bg-yellow-400 text-black px-6 py-3 rounded-xl font-bold hover:bg-yellow-500 transition">
+              Add to Cart
+            </button>
+
+            <button className="flex-1 border-2 border-yellow-400 text-yellow-400 px-6 py-3 rounded-xl font-bold hover:bg-yellow-400 hover:text-black transition">
+              Buy Now
+            </button>
           </div>
         </div>
 
-        {/* RIGHT: DETAILS */}
-        <div className="space-y-6">
-          <h1 className="text-4xl font-bold text-yellow-400">
-            {product.name}
-          </h1>
+        {/* RIGHT: SCROLLABLE DETAILS */}
+        <div className="p-8 space-y-6 text-white">
+          
+          {/* Product Title */}
+          <div>
+            <h1 className="text-3xl lg:text-4xl font-bold text-yellow-400">
+              {product.name}
+            </h1>
+            <p className="text-gray-400 mt-2">{product.brandName}</p>
+          </div>
 
-          <p className="text-gray-400">{product.brandName}</p>
+          {/* Description */}
+          <p className="text-gray-300 leading-relaxed">{product.description}</p>
 
-          <p className="text-gray-300">{product.description}</p>
+          {/* PRICE SECTION */}
+          {selectedVariant && (() => {
+            const mrp = selectedVariant.mrp || Math.round(selectedVariant.price * 1.2);
+            const price = selectedVariant.price;
+            const discountAmount = mrp - price;
+            const discountPercent = Math.round((discountAmount / mrp) * 100);
 
-         {/* PRICE */}
-{selectedVariant && (() => {
-  const mrp = selectedVariant.mrp || Math.round(selectedVariant.price * 1.2); // fallback
-  const price = selectedVariant.price;
-  const discountAmount = mrp - price;
-  const discountPercent = Math.round((discountAmount / mrp) * 100);
-
-  return (
-    <div className="space-y-2">
-      {/* Final Price */}
-      <div className="text-4xl font-bold text-green-400">
-        ₹{price.toLocaleString()}
-      </div>
-
-      {/* MRP + Discount */}
-      <div className="flex items-center gap-4">
-        <span className="text-gray-400 line-through text-lg">
-          ₹{mrp.toLocaleString()}
-        </span>
-
-        <span className="text-red-500 font-semibold">
-          {discountPercent}% OFF
-        </span>
-      </div>
-
-      {/* You Save */}
-      <div className="text-green-500 font-medium">
-        You save ₹{discountAmount.toLocaleString()}
-      </div>
-    </div>
-  );
-})()}
+            return (
+              <div className="bg-gray-900 p-6 rounded-xl space-y-3">
+                <div className="text-4xl font-bold text-green-400">
+                  ₹{price.toLocaleString()}
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="text-gray-400 line-through text-lg">
+                    MRP ₹{mrp.toLocaleString()}
+                  </span>
+                  <span className="text-red-500 font-semibold text-lg">
+                    {discountPercent}% OFF
+                  </span>
+                </div>
+                <div className="text-green-500 font-medium">
+                  You save ₹{discountAmount.toLocaleString()}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* VARIANTS */}
           {product.variants?.length > 0 && (
-            <div>
-              <h4 className="font-semibold mb-2">Available Options</h4>
-
+            <div className="bg-gray-900 p-6 rounded-xl">
+              <h4 className="font-semibold mb-4 text-lg">Select Variant</h4>
               <div className="flex flex-wrap gap-3">
                 {product.variants.map(variant => (
                   <button
                     key={variant.id}
                     onClick={() => setSelectedVariant(variant)}
-                    className={`px-5 py-2 rounded-xl border ${
+                    className={`px-5 py-2 rounded-xl border-2 transition-all ${
                       selectedVariant?.id === variant.id
-                        ? "border-yellow-400 bg-yellow-400 text-black"
-                        : "border-gray-600"
+                        ? "border-yellow-400 bg-yellow-400 text-black font-semibold"
+                        : "border-gray-600 hover:border-gray-400"
                     }`}
                   >
                     SKU: {variant.sku}
@@ -112,80 +191,74 @@ export default function ProductPage() {
             </div>
           )}
 
-          {/* STOCK */}
+          {/* STOCK STATUS */}
           {selectedVariant && (
-            <p
-              className={`font-semibold ${
-                selectedVariant.stock > 0
-                  ? "text-green-400"
-                  : "text-red-400"
-              }`}
-            >
-              {selectedVariant.stock > 0
-                ? `In Stock (${selectedVariant.stock})`
-                : "Out of Stock"}
-            </p>
+            <div className="bg-gray-900 p-4 rounded-xl">
+              <p
+                className={`font-semibold text-lg ${
+                  selectedVariant.stock > 0
+                    ? "text-green-400"
+                    : "text-red-400"
+                }`}
+              >
+                {selectedVariant.stock > 0
+                  ? `✓ In Stock (${selectedVariant.stock} available)`
+                  : "✗ Out of Stock"}
+              </p>
+            </div>
           )}
 
-          {/* CTA */}
-          <div className="flex gap-6">
-            <button className="bg-yellow-400 text-black px-8 py-4 rounded-xl font-bold">
-              Add to Cart
-            </button>
+          {/* FEATURES */}
+          {product.features?.length > 0 && (
+            <section className="bg-gray-900 p-6 rounded-xl">
+              <h3 className="text-2xl font-bold text-yellow-400 mb-4">
+                Key Features
+              </h3>
+              <ul className="space-y-3 text-gray-300">
+                {product.features.map(f => (
+                  <li key={f.id} className="flex items-start gap-3">
+                    <span className="text-yellow-400 mt-1">✓</span>
+                    <span>{f.feature}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
-            <button className="border border-yellow-400 px-8 py-4 rounded-xl font-bold">
-              Buy Now
-            </button>
-          </div>
+          {/* SPECIFICATIONS */}
+          {product.specifications?.length > 0 && (
+            <section className="bg-gray-900 p-6 rounded-xl">
+              <h3 className="text-2xl font-bold text-yellow-400 mb-4">
+                Specifications
+              </h3>
+
+              <div className="space-y-3">
+                {product.specifications.map((s, i) => (
+                  <div
+                    key={i}
+                    className="flex justify-between py-3 border-b border-gray-800 last:border-0"
+                  >
+                    <span className="text-gray-400 font-medium">{s.specKey}</span>
+                    <span className="text-white font-semibold">{s.specValue}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* MANUFACTURER INFO */}
+          {product.manufacturerInfo?.content && (
+            <section className="bg-gray-900 p-6 rounded-xl">
+              <h3 className="text-2xl font-bold text-yellow-400 mb-4">
+                Manufacturer Information
+              </h3>
+              <p className="text-gray-300 leading-relaxed">
+                {product.manufacturerInfo.content}
+              </p>
+            </section>
+          )}
         </div>
       </div>
-
-      {/* FEATURES */}
-      {product.features?.length > 0 && (
-        <section className="mt-16">
-          <h3 className="text-2xl font-bold text-yellow-400 mb-4">
-            Features
-          </h3>
-          <ul className="list-disc ml-6 space-y-2 text-gray-300">
-            {product.features.map(f => (
-              <li key={f.id}>{f.feature}</li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {/* SPECIFICATIONS */}
-      {product.specifications?.length > 0 && (
-        <section className="mt-16">
-          <h3 className="text-2xl font-bold text-yellow-400 mb-4">
-            Specifications
-          </h3>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {product.specifications.map((s, i) => (
-              <div
-                key={i}
-                className="bg-gray-900 p-4 rounded-xl flex justify-between"
-              >
-                <span className="text-gray-400">{s.specKey}</span>
-                <span>{s.specValue}</span>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* MANUFACTURER */}
-      {product.manufacturerInfo?.content && (
-        <section className="mt-16">
-          <h3 className="text-2xl font-bold text-yellow-400 mb-4">
-            Manufacturer Info
-          </h3>
-          <p className="text-gray-300">
-            {product.manufacturerInfo.content}
-          </p>
-        </section>
-      )}
     </div>
   );
 }

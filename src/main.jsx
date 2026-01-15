@@ -2,11 +2,13 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
-import "./index.css"; // ✅ THIS WAS MISSING
+import { AuthProvider } from "./api/AuthContext"; // ✅ import AuthProvider
+import "./index.css";
 
-// Rendering the app with BrowserRouter to handle routing
 ReactDOM.createRoot(document.getElementById("root")).render(
   <BrowserRouter>
-    <App />
+    <AuthProvider>
+      <App />
+    </AuthProvider>
   </BrowserRouter>
 );

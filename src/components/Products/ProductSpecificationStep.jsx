@@ -6,24 +6,40 @@ export default function ProductSpecificationStep({ productData, onConfirm }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  /* ===========================
+     Update spec
+  ============================ */
   const handleChange = (index, field, value) => {
-    const newSpecs = [...specs];
-    newSpecs[index][field] = value;
-    setSpecs(newSpecs);
+    setSpecs((prev) =>
+      prev.map((s, i) =>
+        i === index ? { ...s, [field]: value } : s
+      )
+    );
   };
 
+  /* ===========================
+     Add / Remove
+  ============================ */
   const handleAddSpec = () => {
-    setSpecs([...specs, { specKey: "", specValue: "" }]);
+    setSpecs((prev) => [...prev, { specKey: "", specValue: "" }]);
   };
 
   const handleRemoveSpec = (index) => {
-    const newSpecs = specs.filter((_, i) => i !== index);
-    setSpecs(newSpecs);
+    setSpecs((prev) => prev.filter((_, i) => i !== index));
   };
 
+  /* ===========================
+     Save
+  ============================ */
   const handleConfirm = async () => {
-    if (specs.some((s) => !s.specKey || !s.specValue)) {
-      setError("Fill all specification keys and values");
+    if (specs.some((s) => !s.specKey.trim() || !s.specValue.trim())) {
+      setError("All specification keys and values are required");
+      return;
+    }
+
+    const keys = specs.map((s) => s.specKey.trim().toLowerCase());
+    if (new Set(keys).size !== keys.length) {
+      setError("Specification keys must be unique");
       return;
     }
 
@@ -32,7 +48,7 @@ export default function ProductSpecificationStep({ productData, onConfirm }) {
 
     try {
       await saveSpecifications(productData.id, specs);
-      onConfirm(specs); // send to parent
+      onConfirm(specs);
     } catch (err) {
       console.error(err);
       setError("Failed to save specifications");
@@ -41,54 +57,88 @@ export default function ProductSpecificationStep({ productData, onConfirm }) {
     }
   };
 
+  /* ===========================
+     UI
+  ============================ */
   return (
-    <div className="max-w-4xl mx-auto space-y-4">
-      <h2 className="text-3xl font-bold text-yellow-400 mb-4">Add Product Specifications</h2>
+    <div className="max-w-5xl mx-auto space-y-8">
+      {/* Header */}
+      <div>
+        <h2 className="text-3xl font-bold text-yellow-400">
+          Product Specifications
+        </h2>
+        <p className="text-gray-400 mt-1">
+          Add technical and detailed product information
+        </p>
+      </div>
 
-      {specs.map((s, idx) => (
-        <div key={idx} className="grid grid-cols-2 gap-4 mb-2">
-          <input
-            type="text"
-            placeholder="Specification Key"
-            value={s.specKey}
-            onChange={(e) => handleChange(idx, "specKey", e.target.value)}
-            className="bg-gray-800 text-white rounded-xl px-4 py-2"
-          />
-          <input
-            type="text"
-            placeholder="Specification Value"
-            value={s.specValue}
-            onChange={(e) => handleChange(idx, "specValue", e.target.value)}
-            className="bg-gray-800 text-white rounded-xl px-4 py-2"
-          />
-          {specs.length > 1 && (
-            <button
-              onClick={() => handleRemoveSpec(idx)}
-              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl col-span-2 mt-1"
-            >
-              Remove
-            </button>
-          )}
+      {/* Error */}
+      {error && (
+        <div className="bg-red-900/30 border border-red-700 text-red-400 px-4 py-3 rounded-lg">
+          {error}
         </div>
-      ))}
+      )}
 
-      <div className="flex gap-4">
+      {/* Specs */}
+      <div className="space-y-4">
+        {specs.map((spec, idx) => (
+          <div
+            key={idx}
+            className="bg-gray-900 border border-gray-700 rounded-2xl p-5 space-y-4"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <input
+                type="text"
+                placeholder="Specification name (e.g. Weight)"
+                value={spec.specKey}
+                onChange={(e) =>
+                  handleChange(idx, "specKey", e.target.value)
+                }
+                className="bg-gray-800 text-white rounded-xl px-4 py-3 focus:ring-2 focus:ring-yellow-400"
+              />
+
+              <input
+                type="text"
+                placeholder="Specification value (e.g. 1.5kg)"
+                value={spec.specValue}
+                onChange={(e) =>
+                  handleChange(idx, "specValue", e.target.value)
+                }
+                className="bg-gray-800 text-white rounded-xl px-4 py-3 focus:ring-2 focus:ring-yellow-400"
+              />
+            </div>
+
+            {specs.length > 1 && (
+              <div className="flex justify-end">
+                <button
+                  onClick={() => handleRemoveSpec(idx)}
+                  className="text-red-400 hover:text-red-500 font-semibold"
+                >
+                  Remove
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Actions */}
+      <div className="flex justify-between pt-4">
         <button
           onClick={handleAddSpec}
-          className="bg-green-500 hover:bg-green-600 px-6 py-2 rounded-xl font-bold"
+          className="bg-green-500 hover:bg-green-600 px-6 py-3 rounded-xl font-bold text-black"
         >
-          Add Specification
+          + Add Specification
         </button>
+
         <button
           onClick={handleConfirm}
-          className="bg-yellow-400 hover:bg-yellow-500 px-6 py-2 rounded-xl font-bold"
           disabled={loading}
+          className="bg-yellow-400 hover:bg-yellow-500 disabled:opacity-60 px-10 py-3 rounded-xl font-bold text-black"
         >
           {loading ? "Saving..." : "Confirm Specifications"}
         </button>
       </div>
-
-      {error && <p className="text-red-500">{error}</p>}
     </div>
   );
 }
