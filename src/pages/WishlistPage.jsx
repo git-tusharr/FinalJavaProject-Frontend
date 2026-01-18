@@ -137,6 +137,8 @@ export default function WishlistPage() {
                   Add to Cart
                 </button>
 
+
+
                 <button
                   onClick={() => handleRemove(item.productId)}
                   className="flex-1 bg-red-600 hover:bg-red-700 py-2 rounded-xl font-semibold transition"
