@@ -1,7 +1,9 @@
 import { Routes, Route } from "react-router-dom";
 import Home from "../pages/Home";
-import Shop from "../pages/Shop";          // ✅ ADD
-import ProductPage from "../pages/ProductPage"; // ✅ ADD
+import Shop from "../pages/Shop";          
+import ProductPage from "../pages/ProductPage"; 
+import CartPage from "../pages/CartPage";
+import WishlistPage from "../pages/WishlistPage"; // ✅ ADD
 
 import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
@@ -18,7 +20,7 @@ export default function AppRoutes() {
       <Route path="/" element={<Home />} />
 
       {/* SHOP */}
-      <Route path="/shop" element={<Shop />} />          {/* 👈 HERE */}
+      <Route path="/shop" element={<Shop />} />
       <Route path="/product/:slug" element={<ProductPage />} />
 
       {/* AUTH */}
@@ -31,6 +33,12 @@ export default function AppRoutes() {
 
       {/* ADMIN */}
       <Route path="/admin/products/create" element={<CreateProductPage />} />
+
+      {/* CART */}
+      <Route path="/cart" element={<CartPage />} />
+
+      {/* WISHLIST ✅ */}
+      <Route path="/wishlist" element={<WishlistPage />} />
     </Routes>
   );
 }
