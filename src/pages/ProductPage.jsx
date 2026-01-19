@@ -292,6 +292,7 @@ export default function ProductPage() {
       .then((res) => res.json())
       .then((data) => {
         setProduct(data);
+        console.log(data);
         if (data.variants?.length > 0) setSelectedVariant(data.variants[0]);
         if (data.images?.length > 0) setMainImage(data.images[0]);
       })

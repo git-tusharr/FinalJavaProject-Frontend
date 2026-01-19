@@ -4,6 +4,8 @@ import Shop from "../pages/Shop";
 import ProductPage from "../pages/ProductPage"; 
 import CartPage from "../pages/CartPage";
 import WishlistPage from "../pages/WishlistPage"; // ✅ ADD
+import CheckoutPage from "../pages/CheckoutPage";
+import OrdersPage from "../pages/OrdersPage";
 
 import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
@@ -39,6 +41,10 @@ export default function AppRoutes() {
 
       {/* WISHLIST ✅ */}
       <Route path="/wishlist" element={<WishlistPage />} />
+
+      <Route path="/checkout" element={<CheckoutPage />} />
+<Route path="/orders" element={<OrdersPage />} />
+
     </Routes>
   );
 }
