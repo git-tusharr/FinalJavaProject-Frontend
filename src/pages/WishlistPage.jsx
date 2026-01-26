@@ -139,23 +139,28 @@
 //     </div>
 //   );
 // }
-
-
+import { Trash2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import useWishlistController from "../controllers/WishlistController";
 import { useAuth } from "../api/AuthContext";
 
+const toSlug = (text) =>
+  text
+    ?.toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)+/g, "");
+
 export default function WishlistPage() {
   const { auth } = useAuth();
+  const navigate = useNavigate();
 
-  // ✅ FIX: your AuthContext uses auth.userId (NOT auth.user.id)
   const userId = auth?.userId;
-
   const { wishlist, loading, removeItem } =
     useWishlistController(userId);
 
   if (!userId) {
     return (
-      <div className="p-6 text-center text-gray-400">
+      <div className="min-h-[60vh] flex items-center justify-center text-gray-400">
         Please login to view your wishlist
       </div>
     );
@@ -163,7 +168,7 @@ export default function WishlistPage() {
 
   if (loading) {
     return (
-      <div className="p-6 text-center text-gray-400">
+      <div className="min-h-[60vh] flex items-center justify-center text-gray-400">
         Loading wishlist...
       </div>
     );
@@ -171,42 +176,68 @@ export default function WishlistPage() {
 
   if (wishlist.length === 0) {
     return (
-      <div className="p-6 text-center text-gray-400">
-        Your wishlist is empty ❤️
+      <div className="min-h-[60vh] flex flex-col items-center justify-center text-gray-400">
+        <img
+          src="/empty-wishlist.svg"
+          alt="Empty wishlist"
+          className="w-48 mb-4 opacity-80"
+        />
+        <p className="text-lg">Your wishlist is empty</p>
       </div>
     );
   }
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-semibold mb-6 text-white">
-        My Wishlist
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      <h1 className="text-2xl font-semibold text-white mb-6">
+        My Wishlist ❤️
       </h1>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {wishlist.map((item) => (
-          <div
-            key={item.id}
-            className="bg-black border border-gray-700 rounded-lg p-4 hover:shadow-lg transition"
-          >
-            <img
-              src={item.imageUrl || "/placeholder.png"}
-              alt={item.productName}
-              className="w-full h-48 object-contain mb-3"
-            />
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {wishlist.map((item) => {
+          const slug = toSlug(item.productName);
 
-            <h2 className="text-lg font-medium text-white">
-              {item.productName}
-            </h2>
-
-            <button
-              onClick={() => removeItem(item.productId)}
-              className="mt-4 w-full bg-red-600 text-white py-2 rounded hover:bg-red-700"
+          return (
+            <div
+              key={item.id}
+              className="group relative bg-[#0f0f0f] border border-gray-800 rounded-xl overflow-hidden hover:border-gray-600 transition"
             >
-              Remove
-            </button>
-          </div>
-        ))}
+              {/* Remove */}
+              <button
+                onClick={() => removeItem(item.productId)}
+                className="absolute top-3 right-3 z-10 bg-black/70 p-2 rounded-full opacity-0 group-hover:opacity-100 transition"
+              >
+                <Trash2 size={18} className="text-red-500" />
+              </button>
+
+              {/* Image */}
+              <div
+                onClick={() => navigate(`/product/${slug}`)}
+                className="cursor-pointer bg-black flex items-center justify-center h-56 overflow-hidden"
+              >
+                <img
+                  src={item.imageUrl || "/placeholder.png"}
+                  alt={item.productName}
+                  className="h-40 object-contain group-hover:scale-110 transition-transform duration-300"
+                />
+              </div>
+
+              {/* Info */}
+              <div className="p-4">
+                <h2 className="text-white text-sm font-medium line-clamp-2 mb-3">
+                  {item.productName}
+                </h2>
+
+                <button
+                  onClick={() => navigate(`/product/${slug}`)}
+                  className="w-full text-sm py-2 rounded bg-gradient-to-r from-indigo-600 to-purple-600 hover:opacity-90 transition"
+                >
+                  View Product
+                </button>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
