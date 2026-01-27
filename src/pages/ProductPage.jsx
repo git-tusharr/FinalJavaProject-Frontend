@@ -259,7 +259,7 @@
 //     </div>
 //   );
 // }
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { addToCart } from "../services/CartService";
 import {
@@ -268,52 +268,62 @@ import {
   removeFromWishlist,
 } from "../services/WishlistService";
 import { useAuth } from "../api/AuthContext";
-import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { FaHeart, FaRegHeart } from "react-icons/fa"; // ❤️ Heart icon
+import { FaHeart, FaRegHeart } from "react-icons/fa";
 
 export default function ProductPage() {
   const { slug } = useParams();
-  const { auth } = useAuth();      
-  const navigate = useNavigate(); 
+  const { auth } = useAuth();
+  const navigate = useNavigate();
+
+  const userId = auth?.userId;
 
   const [product, setProduct] = useState(null);
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [mainImage, setMainImage] = useState("");
   const [hoveredThumb, setHoveredThumb] = useState(null);
-  const [wishlist, setWishlist] = useState([]); // Wishlist items
   const [isWished, setIsWished] = useState(false);
 
-  const userId = auth?.userId;
-
-  // Fetch product
+  // =========================
+  // Fetch product by slug
+  // =========================
   useEffect(() => {
     fetch(`http://localhost:8080/api/products/slug/${slug}`)
       .then((res) => res.json())
       .then((data) => {
         setProduct(data);
-        console.log(data);
-        if (data.variants?.length > 0) setSelectedVariant(data.variants[0]);
-        if (data.images?.length > 0) setMainImage(data.images[0]);
+        if (data.variants?.length > 0) {
+          setSelectedVariant(data.variants[0]);
+        }
+        if (data.images?.length > 0) {
+          setMainImage(data.images[0]);
+        }
       })
       .catch((err) => console.error("Product fetch error:", err));
   }, [slug]);
 
-  // Fetch wishlist and check if current product is wished
+  // =========================
+  // Check wishlist status
+  // =========================
   useEffect(() => {
-    if (userId) {
-      getWishlist(userId)
-        .then((res) => {
-          setWishlist(res.data);
-          const wished = res.data.some(
-            (item) => item.productId === product?.productId
-          );
-          setIsWished(wished);
-        })
-        .catch((err) => console.error(err));
-    }
+    if (!userId || !product) return;
+
+    (async () => {
+      try {
+        const items = await getWishlist(userId);
+        const wished = items.some(
+          (item) => item.productId === product.productId
+        );
+        setIsWished(wished);
+      } catch (err) {
+        console.error("Wishlist fetch error:", err);
+      }
+    })();
   }, [userId, product]);
 
+  // =========================
+  // Toggle wishlist
+  // =========================
   const toggleWishlist = async () => {
     if (!auth) {
       toast.error("Please login first");
@@ -323,24 +333,29 @@ export default function ProductPage() {
 
     try {
       if (isWished) {
-        // Remove from wishlist
         await removeFromWishlist(userId, product.productId);
         toast.success("Removed from wishlist");
         setIsWished(false);
       } else {
-        // Add to wishlist
-        await addToWishlist(userId, product.productId);
+        await addToWishlist({
+          userId,
+          productId: product.productId,
+        });
         toast.success("Added to wishlist");
         setIsWished(true);
       }
     } catch (err) {
-      toast.error("Wishlist action failed");
       console.error(err);
+      toast.error("Wishlist action failed");
     }
   };
 
   if (!product) {
-    return <div className="text-center p-10 text-white">Loading...</div>;
+    return (
+      <div className="text-center p-10 text-gray-400">
+        Loading product...
+      </div>
+    );
   }
 
   const breadcrumbs = [
@@ -357,23 +372,32 @@ export default function ProductPage() {
           <span key={idx} className="flex items-center">
             {idx !== breadcrumbs.length - 1 ? (
               <>
-                <Link to={bc.href} className="hover:underline">{bc.name}</Link>
+                <Link to={bc.href} className="hover:underline">
+                  {bc.name}
+                </Link>
                 <span className="mx-1">/</span>
               </>
             ) : (
-              <span className="text-white font-semibold">{bc.name}</span>
+              <span className="text-white font-semibold">
+                {bc.name}
+              </span>
             )}
           </span>
         ))}
       </nav>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Left: Images */}
+        {/* LEFT: Images */}
         <div className="lg:sticky lg:top-4 bg-gray-900 rounded-xl p-6 relative">
-          {/* Wishlist Icon */}
+          {/* Wishlist Heart */}
           <button
             onClick={toggleWishlist}
-            className="absolute top-4 right-4 text-2xl text-red-500 z-50 hover:scale-110 transition"
+            title={
+              isWished
+                ? "Remove from wishlist"
+                : "Add to wishlist"
+            }
+            className="absolute top-4 right-4 text-2xl z-50 text-red-500 hover:scale-110 transition"
           >
             {isWished ? <FaHeart /> : <FaRegHeart />}
           </button>
@@ -384,15 +408,22 @@ export default function ProductPage() {
               {product.images?.map((img, i) => (
                 <div
                   key={i}
-                  onMouseEnter={() => { setMainImage(img); setHoveredThumb(i); }}
-                  onMouseLeave={() => setHoveredThumb(null)}
+                  onMouseEnter={() => {
+                    setMainImage(img);
+                    setHoveredThumb(i);
+                  }}
+                  onMouseLeave={() =>
+                    setHoveredThumb(null)
+                  }
                   className="relative"
                 >
                   <img
                     src={img}
                     alt=""
                     className={`h-16 w-16 object-cover rounded border-2 cursor-pointer ${
-                      mainImage === img ? "border-yellow-400" : "border-gray-700 hover:border-gray-500"
+                      mainImage === img
+                        ? "border-yellow-400"
+                        : "border-gray-700 hover:border-gray-500"
                     }`}
                   />
                   {hoveredThumb === i && (
@@ -418,13 +449,22 @@ export default function ProductPage() {
             </div>
           </div>
 
-          {/* Add to Cart / Buy Now */}
+          {/* Cart Buttons */}
           <div className="flex gap-4 mt-6">
             <button
               onClick={async () => {
-                if (!auth) { toast.error("Please login first"); navigate("/login"); return; }
+                if (!auth) {
+                  toast.error("Please login first");
+                  navigate("/login");
+                  return;
+                }
+                if (selectedVariant.stock <= 0) {
+                  toast.error("Out of stock");
+                  return;
+                }
+
                 try {
-                  await addToCart(auth.userId, {
+                  await addToCart(userId, {
                     productId: product.productId,
                     variantId: selectedVariant.id,
                     quantity: 1,
@@ -433,86 +473,133 @@ export default function ProductPage() {
                   navigate("/cart");
                 } catch (err) {
                   toast.error("Failed to add to cart");
-                  console.error(err);
                 }
               }}
-              className="flex-1 bg-yellow-400 text-black font-bold py-3 rounded-xl hover:bg-yellow-500 transition"
+              className={`flex-1 font-bold py-3 rounded-xl transition ${
+                selectedVariant.stock > 0
+                  ? "bg-yellow-400 text-black hover:bg-yellow-500"
+                  : "bg-gray-700 text-gray-400 cursor-not-allowed"
+              }`}
             >
               Add to Cart
             </button>
 
-            <button className="flex-1 border-2 border-yellow-400 text-yellow-400 font-bold py-3 rounded-xl hover:bg-yellow-400 hover:text-black transition">
+            <button
+              disabled={selectedVariant.stock <= 0}
+              className="flex-1 border-2 border-yellow-400 text-yellow-400 font-bold py-3 rounded-xl hover:bg-yellow-400 hover:text-black transition disabled:opacity-50"
+            >
               Buy Now
             </button>
           </div>
         </div>
 
-        {/* Right: Details */}
+        {/* RIGHT: DETAILS */}
         <div className="space-y-6 text-white">
           <div>
-            <h1 className="text-3xl lg:text-4xl font-bold text-yellow-400">{product.name}</h1>
-            <p className="text-gray-400 mt-1">{product.brandName}</p>
+            <h1 className="text-3xl lg:text-4xl font-bold text-yellow-400">
+              {product.name}
+            </h1>
+            <p className="text-gray-400 mt-1">
+              {product.brandName}
+            </p>
           </div>
 
-          <p className="text-gray-300">{product.description}</p>
+          <p className="text-gray-300">
+            {product.description}
+          </p>
 
+          {/* Price & Stock */}
           {selectedVariant && (
             <div className="bg-gray-900 p-6 rounded-xl">
               <div className="text-4xl font-bold text-green-400">
                 ₹{selectedVariant.price.toLocaleString()}
               </div>
-              <p className={`mt-2 font-semibold ${
-                selectedVariant.stock > 0 ? "text-green-400" : "text-red-400"
-              }`}>
-                {selectedVariant.stock > 0 ? `In Stock (${selectedVariant.stock})` : "Out of Stock"}
+              <p
+                className={`mt-2 font-semibold ${
+                  selectedVariant.stock > 0
+                    ? "text-green-400"
+                    : "text-red-400"
+                }`}
+              >
+                {selectedVariant.stock > 0
+                  ? `In Stock (${selectedVariant.stock})`
+                  : "Out of Stock"}
               </p>
             </div>
           )}
 
+          {/* Variants */}
           {product.variants?.length > 1 && (
             <div className="bg-gray-900 p-6 rounded-xl">
-              <h4 className="mb-4 font-semibold">Select Variant</h4>
+              <h4 className="mb-4 font-semibold text-yellow-400">
+                Select Variant
+              </h4>
               <div className="flex flex-wrap gap-3">
                 {product.variants.map((v) => (
                   <button
                     key={v.id}
                     onClick={() => setSelectedVariant(v)}
-                    className={`px-4 py-2 rounded-xl border-2 ${
-                      selectedVariant?.id === v.id ? "border-yellow-400 bg-yellow-400 text-black font-semibold" : "border-gray-600 hover:border-gray-400"
+                    className={`px-4 py-2 rounded-xl border-2 text-sm transition ${
+                      selectedVariant?.id === v.id
+                        ? "border-yellow-400 bg-yellow-400 text-black font-semibold"
+                        : "border-gray-600 text-gray-300 hover:border-gray-400"
                     }`}
                   >
-                    SKU: {v.sku}
+                    <div>SKU: {v.sku}</div>
+                    <div className="text-xs opacity-80">
+                      ₹{v.price.toLocaleString()}
+                    </div>
                   </button>
                 ))}
               </div>
             </div>
           )}
 
+          {/* Features */}
           {product.features?.length > 0 && (
             <div className="bg-gray-900 p-6 rounded-xl">
-              <h3 className="text-xl font-bold text-yellow-400 mb-3">Key Features</h3>
+              <h3 className="text-xl font-bold text-yellow-400 mb-3">
+                Key Features
+              </h3>
               <ul className="space-y-2 text-gray-300">
-                {product.features.map((f, i) => <li key={i}>✓ {f.feature}</li>)}
+                {product.features.map((f, i) => (
+                  <li key={i}>✓ {f.feature}</li>
+                ))}
               </ul>
             </div>
           )}
 
+          {/* Specifications */}
           {product.specifications?.length > 0 && (
             <div className="bg-gray-900 p-6 rounded-xl">
-              <h3 className="text-xl font-bold text-yellow-400 mb-3">Specifications</h3>
+              <h3 className="text-xl font-bold text-yellow-400 mb-3">
+                Specifications
+              </h3>
               {product.specifications.map((s, i) => (
-                <div key={i} className="flex justify-between border-b border-gray-700 py-2 last:border-0">
-                  <span className="text-gray-400">{s.specKey}</span>
-                  <span className="font-semibold">{s.specValue}</span>
+                <div
+                  key={i}
+                  className="flex justify-between border-b border-gray-700 py-2 last:border-0"
+                >
+                  <span className="text-gray-400">
+                    {s.specKey}
+                  </span>
+                  <span className="font-semibold">
+                    {s.specValue}
+                  </span>
                 </div>
               ))}
             </div>
           )}
 
+          {/* Manufacturer Info */}
           {product.manufacturerInfo?.content && (
             <div className="bg-gray-900 p-6 rounded-xl">
-              <h3 className="text-xl font-bold text-yellow-400 mb-3">Manufacturer Info</h3>
-              <p className="text-gray-300">{product.manufacturerInfo.content}</p>
+              <h3 className="text-xl font-bold text-yellow-400 mb-3">
+                Manufacturer Info
+              </h3>
+              <p className="text-gray-300">
+                {product.manufacturerInfo.content}
+              </p>
             </div>
           )}
         </div>
