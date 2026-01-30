@@ -79,20 +79,15 @@
 //       </button>
 //     </div>
 //   );
-// }
 
 
 
-
-
-
-
-// import { useEffect, useState } from "react";
-// import { checkoutUser } from "../services/CheckoutService";
-// import { createPaymentOrder } from "../services/PaymentService";
+// import { useEffect, useRef, useState } from "react";
 // import { useAuth } from "../api/AuthContext";
 // import { useNavigate } from "react-router-dom";
 // import toast from "react-hot-toast";
+// import API from "../api/axiosInstance";
+// import { getCart } from "../services/CartService";
 
 // export default function CheckoutPage() {
 //   const { auth } = useAuth();
@@ -100,183 +95,213 @@
 //   const navigate = useNavigate();
 
 //   const [cartItems, setCartItems] = useState([]);
-//   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState(null);
-//   const [processingPayment, setProcessingPayment] = useState(false);
+//   const [loading, setLoading] = useState(false);
 
-//   // Calculate total amount
-//   const totalAmount = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+//   const pollingRef = useRef(null);
 
+//   /* ================= AUTH GUARD ================= */
 //   useEffect(() => {
+//     if (auth === null) return;
+
 //     if (!auth) {
 //       toast.error("Please login first");
 //       navigate("/login");
-//       return;
 //     }
+//   }, [auth, navigate]);
 
-//     // Load cart items for preview
-//     const loadCart = async () => {
-//       try {
-//         // You'll need an API to fetch current cart items
-//         // For now, using checkoutUser to get items
-//         const res = await checkoutUser(userId);
-//         setCartItems(res.data);
-//       } catch (err) {
-//         setError("Failed to load cart");
-//         toast.error("Failed to load cart");
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
+//   /* ================= LOAD CART (FIXED) ================= */
+//   const loadCart = async () => {
+//     try {
+//       const res = await getCart(userId); // ✅ /api/cart/get/{userId}
+//       setCartItems(Array.isArray(res.data) ? res.data : []);
+//     } catch (err) {
+//       toast.error("Failed to load cart");
+//       setCartItems([]);
+//     }
+//   };
 
-//     loadCart();
-//   }, [auth, userId, navigate]);
+//   useEffect(() => {
+//     if (userId) loadCart();
+//   }, [userId]);
 
-//   const handlePayment = async () => {
+//   /* ================= TOTAL ================= */
+//   const subtotal = cartItems.reduce(
+//     (sum, item) => sum + item.price * item.quantity,
+//     0
+//   );
+
+//   const shipping = subtotal > 5000 ? 0 : 99;
+//   const total = subtotal + shipping;
+
+//   /* ================= PAY NOW ================= */
+//   const payNow = async () => {
 //     if (cartItems.length === 0) {
 //       toast.error("Cart is empty");
 //       return;
 //     }
 
-//     setProcessingPayment(true);
+//     if (total <= 0) {
+//       toast.error("Invalid payment amount");
+//       return;
+//     }
+
+//     // Razorpay max safeguard
+//     if (total > 500000) {
+//       toast.error("Maximum payment allowed is ₹5,00,000");
+//       return;
+//     }
+
+//     if (!window.Razorpay) {
+//       toast.error("Payment service unavailable");
+//       return;
+//     }
 
 //     try {
-//       // Step 1: Create Razorpay order
-//       const orderResponse = await createPaymentOrder({
-//         amount: totalAmount * 100, // Convert to paise
-//         userId: userId
+//       setLoading(true);
+
+//       // ✅ Backend expects userId + amount
+//       const res = await API.post("/payment/create-order", {
+//         userId,
+//         amount: total,
 //       });
 
-//       const { orderId, key } = orderResponse.data;
+//       const { orderId, key } = res.data;
 
-//       // Step 2: Initialize Razorpay
 //       const options = {
-//         key: key,
-//         amount: totalAmount * 100,
-//         currency: "INR",
-//         name: "Your Store Name",
-//         description: "Order Payment",
+//         key,
 //         order_id: orderId,
-//         handler: async function (response) {
-//           // Payment successful
-//           toast.success("Payment successful! 🎉");
-          
-//           // The webhook will handle backend updates
-//           // Navigate to orders page after a short delay
-//           setTimeout(() => {
-//             navigate("/orders");
-//           }, 1500);
-//         },
+//         currency: "INR",
+//         name: "My Store",
+//         description: "Order Payment",
+
 //         prefill: {
-//           name: auth.username || "",
-//           email: auth.email || "",
-//           contact: auth.phone || ""
+//           name: auth?.name || "User",
+//           email: auth?.email || "test@test.com",
+//           contact: auth?.phone || "9999999999",
 //         },
-//         notes: {
-//           userId: userId
+
+//         handler: function () {
+//           toast.success("Payment successful! Verifying...");
+//           checkOrderStatus(orderId);
 //         },
-//         theme: {
-//           color: "#FBBF24" // Yellow color matching your theme
-//         },
+
 //         modal: {
-//           ondismiss: function() {
-//             setProcessingPayment(false);
+//           ondismiss: function () {
 //             toast.error("Payment cancelled");
-//           }
-//         }
+//           },
+//         },
+
+//         theme: {
+//           color: "#FACC15",
+//         },
 //       };
 
-//       const razorpay = new window.Razorpay(options);
-//       razorpay.open();
-      
+//       const rzp = new window.Razorpay(options);
+
+//       rzp.on("payment.failed", function (res) {
+//         toast.error(res?.error?.description || "Payment failed");
+//       });
+
+//       rzp.open();
 //     } catch (err) {
-//       console.error("Payment error:", err);
-//       toast.error("Payment initialization failed");
-//       setProcessingPayment(false);
+//       console.error(err);
+//       toast.error("Payment initiation failed");
+//     } finally {
+//       setLoading(false);
 //     }
 //   };
 
-//   if (loading) {
-//     return <div className="p-10 text-white text-center">Loading checkout...</div>;
-//   }
+//   /* ================= ORDER STATUS POLLING ================= */
+//  const checkOrderStatus = (orderId) => {
+//   let attempts = 0;
 
-//   if (error) {
-//     return <div className="p-10 text-red-400 text-center">{error}</div>;
-//   }
+//   pollingRef.current = setInterval(async () => {
+//     attempts++;
 
+//     try {
+//       const res = await API.get(`/payment/status/order/${orderId}`);
+
+//       if (res.data === "PAID") {
+//         clearInterval(pollingRef.current);
+//         toast.success("Order confirmed 🎉");
+
+//         // Redirect to Orders page after payment confirmation
+//         navigate("/orders");
+//       }
+//     } catch (err) {
+//       console.error("Status check failed", err);
+//     }
+
+//     if (attempts >= 10) {
+//       clearInterval(pollingRef.current);
+//       toast("Order pending. Please check later.");
+//     }
+//   }, 2000);
+// };
+
+
+//   /* ================= CLEANUP ================= */
+//   useEffect(() => {
+//     return () => {
+//       if (pollingRef.current) {
+//         clearInterval(pollingRef.current);
+//       }
+//     };
+//   }, []);
+
+//   /* ================= UI ================= */
 //   return (
-//     <div className="max-w-6xl mx-auto p-6 text-white">
+//     <div className="max-w-4xl mx-auto p-6 text-white">
 //       <h1 className="text-3xl font-bold text-yellow-400 mb-6">
 //         Checkout
 //       </h1>
 
 //       {cartItems.length === 0 ? (
-//         <div className="text-center">
-//           <p className="text-gray-400 mb-4">Your cart is empty</p>
-//           <button
-//             onClick={() => navigate("/")}
-//             className="bg-yellow-400 text-black px-6 py-3 rounded-xl font-bold"
-//           >
-//             Continue Shopping
-//           </button>
-//         </div>
+//         <p className="text-gray-400">Your cart is empty.</p>
 //       ) : (
 //         <>
-//           <div className="bg-gray-800 rounded-xl p-6 mb-6">
-//             <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
-            
-//             <table className="w-full border border-gray-700 rounded-xl overflow-hidden mb-6">
-//               <thead className="bg-gray-700">
-//                 <tr>
-//                   <th className="p-3 text-left">Product</th>
-//                   <th className="p-3 text-left">Quantity</th>
-//                   <th className="p-3 text-left">Price</th>
-//                   <th className="p-3 text-left">Total</th>
-//                 </tr>
-//               </thead>
-//               <tbody>
-//                 {cartItems.map((item) => (
-//                   <tr key={item.id} className="border-t border-gray-700">
-//                     <td className="p-3">{item.productId}</td>
-//                     <td className="p-3">{item.quantity}</td>
-//                     <td className="p-3 text-green-400">₹{item.price}</td>
-//                     <td className="p-3 text-green-400">₹{item.price * item.quantity}</td>
-//                   </tr>
-//                 ))}
-//               </tbody>
-//             </table>
-
-//             <div className="border-t border-gray-700 pt-4">
-//               <div className="flex justify-between text-xl font-bold">
-//                 <span>Total Amount:</span>
-//                 <span className="text-green-400">₹{totalAmount}</span>
+//           <div className="space-y-4">
+//             {cartItems.map((item) => (
+//               <div
+//                 key={item.id}
+//                 className="flex justify-between bg-gray-900 p-4 rounded-xl"
+//               >
+//                 <div>
+//                   <h3 className="font-bold">{item.productName}</h3>
+//                   <p className="text-gray-400">
+//                     Qty: {item.quantity}
+//                   </p>
+//                 </div>
+//                 <p className="text-green-400 font-bold">
+//                   ₹{item.price * item.quantity}
+//                 </p>
 //               </div>
+//             ))}
+//           </div>
+
+//           <div className="mt-6 space-y-2 text-lg">
+//             <div className="flex justify-between">
+//               <span>Subtotal</span>
+//               <span>₹{subtotal}</span>
+//             </div>
+//             <div className="flex justify-between">
+//               <span>Shipping</span>
+//               <span>{shipping === 0 ? "FREE" : `₹${shipping}`}</span>
+//             </div>
+//             <hr className="border-gray-700" />
+//             <div className="flex justify-between text-xl font-bold">
+//               <span>Total</span>
+//               <span className="text-green-400">₹{total}</span>
 //             </div>
 //           </div>
 
-//           <div className="flex gap-4">
-//             <button
-//               onClick={() => navigate("/cart")}
-//               className="bg-gray-700 text-white px-6 py-3 rounded-xl font-bold hover:bg-gray-600"
-//             >
-//               Back to Cart
-//             </button>
-            
-//             <button
-//               onClick={handlePayment}
-//               disabled={processingPayment}
-//               className="bg-yellow-400 text-black px-6 py-3 rounded-xl font-bold hover:bg-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed flex-1"
-//             >
-//               {processingPayment ? "Processing..." : `Pay ₹${totalAmount}`}
-//             </button>
-//           </div>
-
-//           {/* Important: Add Razorpay script to your index.html */}
-//           <div className="mt-6 p-4 bg-blue-900/30 rounded-lg">
-//             <p className="text-sm text-blue-300">
-//               💡 <strong>Secure Payment:</strong> Your payment is processed securely through Razorpay
-//             </p>
-//           </div>
+//           <button
+//             onClick={payNow}
+//             disabled={loading}
+//             className="mt-6 w-full bg-yellow-400 text-black py-3 rounded-xl font-bold hover:bg-yellow-500 disabled:opacity-60"
+//           >
+//             {loading ? "Processing..." : "Pay Now"}
+//           </button>
 //         </>
 //       )}
 //     </div>
@@ -285,12 +310,17 @@
 
 
 
-import { useEffect, useState } from "react";
-import { checkoutUser } from "../services/CheckoutService";
-import { createPaymentOrder } from "../services/PaymentService";
+
+
+
+
+
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../api/AuthContext";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import API from "../api/axiosInstance";
+import { getCart } from "../services/CartService";
 
 export default function CheckoutPage() {
   const { auth } = useAuth();
@@ -298,257 +328,208 @@ export default function CheckoutPage() {
   const navigate = useNavigate();
 
   const [cartItems, setCartItems] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [processingPayment, setProcessingPayment] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  // Calculate total amount
-  const totalAmount = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const pollingRef = useRef(null);
 
+  /* ================= AUTH GUARD ================= */
   useEffect(() => {
-    // ✅ DEBUG: Check authentication status
-    console.log("=== AUTHENTICATION DEBUG ===");
-    console.log("Auth object:", auth);
-    console.log("User ID:", userId);
-    console.log("Token from localStorage:", localStorage.getItem("token"));
-    console.log("Token from sessionStorage:", sessionStorage.getItem("token"));
-    console.log("===========================");
+    if (auth === null) return;
 
     if (!auth) {
       toast.error("Please login first");
       navigate("/login");
-      return;
     }
+  }, [auth, navigate]);
 
-    // Load cart items for preview
-    const loadCart = async () => {
-      try {
-        // You'll need an API to fetch current cart items
-        // For now, using checkoutUser to get items
-        const res = await checkoutUser(userId);
-        setCartItems(res.data);
-      } catch (err) {
-        setError("Failed to load cart");
-        toast.error("Failed to load cart");
-      } finally {
-        setLoading(false);
-      }
-    };
+  /* ================= LOAD CART ================= */
+  const loadCart = async () => {
+    try {
+      const res = await getCart(userId); // ✅ /api/cart/get/{userId}
+      setCartItems(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      toast.error("Failed to load cart");
+      setCartItems([]);
+    }
+  };
 
-    loadCart();
-  }, [auth, userId, navigate]);
+  useEffect(() => {
+    if (userId) loadCart();
+  }, [userId]);
 
-  const handlePayment = async () => {
-    // ✅ PRE-FLIGHT CHECKS
-    console.log("=== PAYMENT PRE-FLIGHT CHECKS ===");
-    console.log("1. Auth object exists:", !!auth);
-    console.log("2. User ID:", userId);
-    console.log("3. Cart items count:", cartItems.length);
-    console.log("4. Total amount:", totalAmount);
-    console.log("5. Token in localStorage:", localStorage.getItem("token") ? "EXISTS" : "MISSING");
-    console.log("6. Token value:", localStorage.getItem("token")?.substring(0, 20) + "...");
-    console.log("================================");
+  /* ================= TOTAL ================= */
+  const subtotal = cartItems.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
 
+  const shipping = subtotal > 5000 ? 0 : 99;
+  const total = subtotal + shipping;
+
+  /* ================= PAY NOW ================= */
+  const payNow = async () => {
     if (cartItems.length === 0) {
       toast.error("Cart is empty");
       return;
     }
 
-    if (!auth || !userId) {
-      toast.error("Please login first");
-      navigate("/login");
+    if (total <= 0) {
+      toast.error("Invalid payment amount");
       return;
     }
 
-    setProcessingPayment(true);
+    // Razorpay max safeguard
+    if (total > 500000) {
+      toast.error("Maximum payment allowed is ₹5,00,000");
+      return;
+    }
+
+    if (!window.Razorpay) {
+      toast.error("Payment service unavailable");
+      return;
+    }
 
     try {
-      console.log("📤 Creating payment order...");
-      
-      const payload = {
-        amount: totalAmount * 100, // Convert to paise
-        userId: userId
-      };
-      
-      console.log("Payment payload:", payload);
+      setLoading(true);
 
-      // Step 1: Create Razorpay order
-      const orderResponse = await createPaymentOrder(payload);
+      // ✅ Backend expects userId + amount
+      const res = await API.post("/payment/create-order", {
+        userId,
+        amount: total,
+      });
 
-      console.log("✅ Order created successfully:", orderResponse.data);
+      const { orderId, key } = res.data;
 
-      const { orderId, key } = orderResponse.data;
-
-      // Step 2: Initialize Razorpay
       const options = {
-        key: key,
-        amount: totalAmount * 100,
-        currency: "INR",
-        name: "Your Store Name",
-        description: "Order Payment",
+        key,
         order_id: orderId,
-        handler: async function (response) {
-          console.log("✅ Payment successful:", response);
-          toast.success("Payment successful! 🎉");
-          
-          // The webhook will handle backend updates
-          // Navigate to orders page after a short delay
-          setTimeout(() => {
-            navigate("/orders");
-          }, 1500);
-        },
+        currency: "INR",
+        name: "My Store",
+        description: "Order Payment",
+
         prefill: {
-          name: auth.username || "",
-          email: auth.email || "",
-          contact: auth.phone || ""
+          name: auth?.name || "User",
+          email: auth?.email || "test@test.com",
+          contact: auth?.phone || "9999999999",
         },
-        notes: {
-          userId: userId
+
+        handler: function () {
+          toast.success("Payment successful! Verifying...");
+          checkOrderStatus(orderId);
         },
-        theme: {
-          color: "#FBBF24" // Yellow color matching your theme
-        },
+
         modal: {
-          ondismiss: function() {
-            console.log("⚠️ Payment modal dismissed");
-            setProcessingPayment(false);
+          ondismiss: function () {
             toast.error("Payment cancelled");
-          }
-        }
+          },
+        },
+
+        theme: {
+          color: "#FACC15",
+        },
       };
 
-      const razorpay = new window.Razorpay(options);
-      razorpay.open();
-      
+      const rzp = new window.Razorpay(options);
+
+      rzp.on("payment.failed", function (res) {
+        toast.error(res?.error?.description || "Payment failed");
+      });
+
+      rzp.open();
     } catch (err) {
-      console.error("❌ Payment error:", err);
-      console.error("Error response:", err.response);
-      console.error("Error status:", err.response?.status);
-      console.error("Error data:", err.response?.data);
-      console.error("Error headers:", err.response?.headers);
-      
-      // Check specific error
-      if (err.response?.status === 403) {
-        toast.error("Authentication failed. Please login again.");
-        console.error("🔴 403 ERROR - Possible causes:");
-        console.error("1. Token is missing");
-        console.error("2. Token is expired");
-        console.error("3. Token is invalid");
-        console.error("4. Backend security config blocks request");
-        
-        // Try to get more info
-        const token = localStorage.getItem("token");
-        if (!token) {
-          console.error("❌ NO TOKEN FOUND in localStorage");
-          navigate("/login");
-        } else {
-          console.error("Token exists but was rejected by backend");
-          console.error("Token preview:", token.substring(0, 50) + "...");
-        }
-      } else if (err.response?.status === 401) {
-        toast.error("Session expired. Please login again.");
-        navigate("/login");
-      } else {
-        toast.error("Payment initialization failed");
-      }
-      
-      setProcessingPayment(false);
+      console.error(err);
+      toast.error("Payment initiation failed");
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (loading) {
-    return <div className="p-10 text-white text-center">Loading checkout...</div>;
-  }
+  /* ================= ORDER STATUS POLLING ================= */
+  const checkOrderStatus = async (orderId) => {
+    let attempts = 0;
 
-  if (error) {
-    return <div className="p-10 text-red-400 text-center">{error}</div>;
-  }
+    pollingRef.current = setInterval(async () => {
+      attempts++;
 
+      try {
+        const res = await API.get(`/payment/status/order/${orderId}`);
+
+        if (res.data === "PAID") {
+          clearInterval(pollingRef.current);
+          toast.success("Order confirmed 🎉 Redirecting...");
+          setTimeout(() => navigate("/orders"), 1500);
+        }
+      } catch (err) {
+        console.error("Status check failed", err);
+      }
+
+      if (attempts >= 10) {
+        clearInterval(pollingRef.current);
+        toast("Order pending. Please check later.");
+      }
+    }, 2000);
+  };
+
+  /* ================= CLEANUP ================= */
+  useEffect(() => {
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+      }
+    };
+  }, []);
+
+  /* ================= UI ================= */
   return (
-    <div className="max-w-6xl mx-auto p-6 text-white">
+    <div className="max-w-4xl mx-auto p-6 text-white">
       <h1 className="text-3xl font-bold text-yellow-400 mb-6">
         Checkout
       </h1>
 
-      {/* DEBUG INFO PANEL */}
-      <div className="bg-blue-900/30 rounded-lg p-4 mb-6 text-sm">
-        <h3 className="font-bold text-blue-300 mb-2">🔍 Debug Info:</h3>
-        <div className="space-y-1 text-blue-200">
-          <p>Logged in: {auth ? "✅ Yes" : "❌ No"}</p>
-          <p>User ID: {userId || "N/A"}</p>
-          <p>Token exists: {localStorage.getItem("token") ? "✅ Yes" : "❌ No"}</p>
-          <p>Cart items: {cartItems.length}</p>
-          <p>Total: ₹{totalAmount}</p>
-        </div>
-      </div>
-
       {cartItems.length === 0 ? (
-        <div className="text-center">
-          <p className="text-gray-400 mb-4">Your cart is empty</p>
-          <button
-            onClick={() => navigate("/")}
-            className="bg-yellow-400 text-black px-6 py-3 rounded-xl font-bold"
-          >
-            Continue Shopping
-          </button>
-        </div>
+        <p className="text-gray-400">Your cart is empty.</p>
       ) : (
         <>
-          <div className="bg-gray-800 rounded-xl p-6 mb-6">
-            <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
-            
-            <table className="w-full border border-gray-700 rounded-xl overflow-hidden mb-6">
-              <thead className="bg-gray-700">
-                <tr>
-                  <th className="p-3 text-left">Product</th>
-                  <th className="p-3 text-left">Quantity</th>
-                  <th className="p-3 text-left">Price</th>
-                  <th className="p-3 text-left">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {cartItems.map((item) => (
-                  <tr key={item.id} className="border-t border-gray-700">
-                    <td className="p-3">{item.productId}</td>
-                    <td className="p-3">{item.quantity}</td>
-                    <td className="p-3 text-green-400">₹{item.price}</td>
-                    <td className="p-3 text-green-400">₹{item.price * item.quantity}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            <div className="border-t border-gray-700 pt-4">
-              <div className="flex justify-between text-xl font-bold">
-                <span>Total Amount:</span>
-                <span className="text-green-400">₹{totalAmount}</span>
+          <div className="space-y-4">
+            {cartItems.map((item) => (
+              <div
+                key={item.id}
+                className="flex justify-between bg-gray-900 p-4 rounded-xl"
+              >
+                <div>
+                  <h3 className="font-bold">{item.productName}</h3>
+                  <p className="text-gray-400">Qty: {item.quantity}</p>
+                </div>
+                <p className="text-green-400 font-bold">
+                  ₹{item.price * item.quantity}
+                </p>
               </div>
+            ))}
+          </div>
+
+          <div className="mt-6 space-y-2 text-lg">
+            <div className="flex justify-between">
+              <span>Subtotal</span>
+              <span>₹{subtotal}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Shipping</span>
+              <span>{shipping === 0 ? "FREE" : `₹${shipping}`}</span>
+            </div>
+            <hr className="border-gray-700" />
+            <div className="flex justify-between text-xl font-bold">
+              <span>Total</span>
+              <span className="text-green-400">₹{total}</span>
             </div>
           </div>
 
-          <div className="flex gap-4">
-            <button
-              onClick={() => navigate("/cart")}
-              className="bg-gray-700 text-white px-6 py-3 rounded-xl font-bold hover:bg-gray-600"
-            >
-              Back to Cart
-            </button>
-            
-            <button
-              onClick={handlePayment}
-              disabled={processingPayment}
-              className="bg-yellow-400 text-black px-6 py-3 rounded-xl font-bold hover:bg-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed flex-1"
-            >
-              {processingPayment ? "Processing..." : `Pay ₹${totalAmount}`}
-            </button>
-          </div>
-
-          {/* Important: Add Razorpay script to your index.html */}
-          <div className="mt-6 p-4 bg-blue-900/30 rounded-lg">
-            <p className="text-sm text-blue-300">
-              💡 <strong>Secure Payment:</strong> Your payment is processed securely through Razorpay
-            </p>
-          </div>
+          <button
+            onClick={payNow}
+            disabled={loading}
+            className="mt-6 w-full bg-yellow-400 text-black py-3 rounded-xl font-bold hover:bg-yellow-500 disabled:opacity-60"
+          >
+            {loading ? "Processing..." : "Pay Now"}
+          </button>
         </>
       )}
     </div>
