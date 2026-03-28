@@ -17,7 +17,6 @@ import VerifyEmailOtp from "../pages/VerifyEmailOtp";
 import VerifyPhoneOtp from "../pages/VerifyPhoneOtp";
 import ForgotPassword from "../pages/ForgotPassword";
 import ResetPassword from "../pages/ResetPassword";
-
 // 6  Admin  pages
 import AdminLayout from "../layouts/AdminLayout";
 import CreateProductPage from "../pages/admin/products/CreateProductPage";

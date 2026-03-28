@@ -26,7 +26,11 @@ export default function Checkout() {
   const payNow = async () => {
     try {
       setLoading(true);
-      const amountPaise = Math.round(total * 100);   // ✔ SAFE INTEGER
+
+      // ✅ FIX 1: Persist OrderItems to DB BEFORE payment opens
+      await API.post(`/checkout/${userId}`);
+
+      const amountPaise = Math.round(total * 100);
       console.log("Sending amount:", amountPaise);
 
       const res = await API.post("/payment/create-order", {
@@ -35,7 +39,6 @@ export default function Checkout() {
       });
 
       console.log("Order created:", res.data);
-
       const { orderId, key } = res.data;
 
       const options = {
@@ -51,15 +54,30 @@ export default function Checkout() {
         },
         handler: function (response) {
           console.log("Payment callback:", response);
-          const orderId = response.razorpay_order_id;
-          alert("Payment submitted! Checking status...");
-          checkOrderStatus(orderId);
+
+          const razorpayOrderId = response.razorpay_order_id;
+          const razorpayPaymentId = response.razorpay_payment_id; // ✅ FIX 2: capture paymentId
+
+          // ✅ FIX 3: Call order-paid so backend marks PAID and creates Order
+          API.post("/payment/order-paid", {
+            orderId: razorpayOrderId,
+            paymentId: razorpayPaymentId,
+          })
+            .then(() => {
+              console.log("order-paid called successfully");
+              alert("Payment submitted! Checking status...");
+              checkOrderStatus(razorpayOrderId);
+            })
+            .catch((err) => {
+              console.error("order-paid call failed:", err);
+              alert("Payment done but order update failed. Contact support.");
+            });
         },
         modal: {
           ondismiss: function () {
             console.warn("Popup closed by user");
           },
-        }
+        },
       };
 
       const rzp = new window.Razorpay(options);
@@ -106,6 +124,7 @@ export default function Checkout() {
     }
   };
 
+  // ✅ Polls until order status becomes PAID
   const checkOrderStatus = async (orderId) => {
     let attempts = 0;
     const interval = setInterval(async () => {
@@ -116,15 +135,15 @@ export default function Checkout() {
         console.log("Order status:", res.data);
         if (res.data === "PAID") {
           clearInterval(interval);
-          alert("Payment Confirmed!");
-          setCartItems([]);
+          alert("Payment Confirmed! Your order has been placed.");
+          setCartItems([]); // ✅ Clear cart UI
         }
       } catch (err) {
         console.error("Status check error:", err);
       }
-      if (attempts > 10) {
+      if (attempts >= 10) {
         clearInterval(interval);
-        alert("Still pending. Refresh later.");
+        alert("Still pending. Please check My Orders in a moment.");
       }
     }, 2000);
   };
@@ -144,7 +163,7 @@ export default function Checkout() {
       } catch (err) {
         console.error("Status check error:", err);
       }
-      if (attempts > 10) {
+      if (attempts >= 10) {
         clearInterval(interval);
         alert("Still pending. Try again later.");
       }
@@ -164,32 +183,40 @@ export default function Checkout() {
               <Typography>{item.productName}</Typography>
               <Typography>Qty: {item.quantity}</Typography>
               <Typography>Price: ₹{item.price}</Typography>
-                  {/* ✅ Product Image */}
-    <Box
-      component="img"
-      src={item.productImage}
-      alt={item.productName}
-      sx={{
-        width: 80,
-        height: 80,
-        objectFit: "cover",
-        borderRadius: 1,
-        border: "1px solid #ddd",
-      }}
-    />
+
+              {/* ✅ Product Image */}
+              <Box
+                component="img"
+                src={item.productImage}
+                alt={item.productName}
+                sx={{
+                  width: 80,
+                  height: 80,
+                  objectFit: "cover",
+                  borderRadius: 1,
+                  border: "1px solid #ddd",
+                }}
+              />
               <Divider sx={{ my: 1 }} />
             </Box>
           ))}
 
           <Typography variant="h6">Total: ₹{total}</Typography>
 
-          <Button sx={{ mt: 2 }} variant="contained"
-            disabled={loading} onClick={payNow}>
-            Pay One Time
+          <Button
+            sx={{ mt: 2 }}
+            variant="contained"
+            disabled={loading}
+            onClick={payNow}
+          >
+            {loading ? "Processing..." : "Pay One Time"}
           </Button>
 
-          <Button sx={{ mt: 2, ml: 2 }} variant="outlined"
-            onClick={subscribeNow}>
+          <Button
+            sx={{ mt: 2, ml: 2 }}
+            variant="outlined"
+            onClick={subscribeNow}
+          >
             Subscribe Monthly
           </Button>
         </>
@@ -197,104 +224,3 @@ export default function Checkout() {
     </Box>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// package com.example.service;
-
-// import javax.crypto.Mac;
-// import javax.crypto.spec.SecretKeySpec;
-// import org.springframework.stereotype.Service;
-
-
-// @Service
-// public class WebhookService {
-
-//     public boolean verify(String payload, String signature, String secret) {
-//         try {
-//             Mac sha256 = Mac.getInstance("HmacSHA256");
-//             SecretKeySpec key = new SecretKeySpec(secret.getBytes(), "HmacSHA256");
-//             sha256.init(key);
-//             byte[] digest = sha256.doFinal(payload.getBytes());
-
-//             // Convert byte[] to HEX to match Razorpay signature
-//             StringBuilder hash = new StringBuilder();
-//             for (byte b : digest) {
-//                 hash.append(String.format("%02x", b));
-//             }
-
-//             return hash.toString().equals(signature);
-//         } catch (Exception e) {
-//             System.out.println("Webhook verification failed: " + e.getMessage());
-//             return false;
-//         }
-//     }
-// }
