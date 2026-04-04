@@ -1,6 +1,24 @@
 import { useEffect, useState } from "react";
 import API from "../api/axiosInstance";
 import { useNavigate } from "react-router-dom";
+import { Box, Typography, Button } from "@mui/material";
+
+/* ── THEME TOKENS ── */
+const T = {
+  black: "#080808",
+  surface: "#111111",
+  card: "#141414",
+  border: "#1e1e1e",
+  gold: "#E9B949",
+  goldHov: "#f5c84e",
+  red: "#D0312D",
+  text: "#e2e2e2",
+  muted: "#666666",
+  green: "#4ade80",
+};
+
+const SYNE = "'Syne', sans-serif";
+const DM = "'DM Sans', sans-serif";
 
 export default function MyOrders() {
   const [orders, setOrders] = useState([]);
@@ -12,26 +30,23 @@ export default function MyOrders() {
       if (!userId) return;
 
       const res = await API.get(`/orders/user/${userId}`);
-const parsedOrders = res.data.map(order => {
-  let items = [];
 
-  if (order.itemsJson) {
-    try {
-      items =
-        typeof order.itemsJson === "string"
-          ? JSON.parse(order.itemsJson)
-          : order.itemsJson;
-    } catch (e) {
-      console.error("Invalid itemsJson for order:", order.orderNumber);
-      items = [];
-    }
-  }
+      const parsedOrders = res.data.map(order => {
+        let items = [];
 
-  return {
-    ...order,
-    items
-  };
-});
+        if (order.itemsJson) {
+          try {
+            items =
+              typeof order.itemsJson === "string"
+                ? JSON.parse(order.itemsJson)
+                : order.itemsJson;
+          } catch (e) {
+            items = [];
+          }
+        }
+
+        return { ...order, items };
+      });
 
       setOrders(parsedOrders);
     };
@@ -39,85 +54,213 @@ const parsedOrders = res.data.map(order => {
     loadOrders();
   }, []);
 
-  
   return (
-    <div className="max-w-5xl mx-auto p-6">
-      <h2 className="text-2xl font-bold mb-6">Your Orders</h2>
+    <Box sx={{
+      minHeight: "100vh",
+      bgcolor: T.black,
+      px: { xs: 2, md: 4 },
+      py: 4,
+      fontFamily: DM
+    }}>
+
+      {/* Header */}
+      <Typography sx={{
+        fontFamily: SYNE,
+        fontSize: 26,
+        fontWeight: 800,
+        color: "#fff",
+        mb: 3
+      }}>
+        Your <Box component="span" sx={{ color: T.gold }}>Orders</Box>
+      </Typography>
 
       {orders.map(order => (
-        <div
+        <Box
           key={order.orderNumber}
-          className="border rounded-lg mb-6 bg-white shadow-sm"
+          sx={{
+            mb: 3,
+            bgcolor: T.card,
+            border: `1px solid ${T.border}`,
+            borderRadius: "12px",
+            overflow: "hidden",
+            transition: "border-color .2s, transform .2s, box-shadow .2s",
+            "&:hover": {
+              borderColor: "rgba(233,185,73,.4)",
+              transform: "translateY(-4px)",
+              boxShadow: "0 12px 32px rgba(0,0,0,.5)",
+            }
+          }}
         >
-          {/* ORDER HEADER */}
-          <div className="flex justify-between bg-gray-100 p-4 rounded-t">
-            <div>
-              <p className="text-sm text-gray-600">ORDER PLACED</p>
-              <p className="text-sm">
+
+          {/* HEADER */}
+          <Box sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: 2,
+            p: 2,
+            bgcolor: T.surface,
+            borderBottom: `1px solid ${T.border}`
+          }}>
+
+            <Box>
+              <Typography sx={{ fontSize: 11, color: T.muted, letterSpacing: "1.5px", textTransform: "uppercase" }}>
+                Order placed
+              </Typography>
+              <Typography sx={{ fontSize: 13, color: "#fff" }}>
                 {new Date(order.createdAt).toLocaleDateString()}
-              </p>
-            </div>
+              </Typography>
+            </Box>
 
-            <div>
-              <p className="text-sm text-gray-600">ORDER #</p>
-              <p className="text-sm font-medium">{order.orderNumber}</p>
-            </div>
+            <Box>
+              <Typography sx={{ fontSize: 11, color: T.muted, letterSpacing: "1.5px", textTransform: "uppercase" }}>
+                Order #
+              </Typography>
+              <Typography sx={{ fontSize: 13, color: "#fff", fontFamily: SYNE }}>
+                {order.orderNumber}
+              </Typography>
+            </Box>
 
-            <div>
-              <p className="text-sm text-gray-600">STATUS</p>
-              <p className="text-sm font-semibold text-blue-600">
+            <Box>
+              <Typography sx={{ fontSize: 11, color: T.muted, letterSpacing: "1.5px", textTransform: "uppercase" }}>
+                Status
+              </Typography>
+              <Typography sx={{
+                fontSize: 12,
+                fontFamily: SYNE,
+                fontWeight: 700,
+                color: T.gold
+              }}>
                 {order.orderStatus}
-              </p>
-            </div>
-          </div>
+              </Typography>
+            </Box>
 
-          {/* ORDER ITEMS */}
-          <div className="p-4">
-            {order.items.map(item => (
-              <div
+          </Box>
+
+          {/* ITEMS */}
+          <Box sx={{ p: 2 }}>
+            {order.items.map((item, index) => (
+              <Box
                 key={item.productId}
-                className="flex gap-4 border-b py-4 last:border-b-0"
+                sx={{
+                  display: "flex",
+                  gap: 2,
+                  py: 2,
+                  borderBottom:
+                    index !== order.items.length - 1
+                      ? `1px solid ${T.border}`
+                      : "none"
+                }}
               >
-                <img
+
+                {/* Image */}
+                <Box
+                  component="img"
                   src={item.productImage}
                   alt={item.productName}
-                  className="w-24 h-24 object-cover rounded"
+                  sx={{
+                    width: 90,
+                    height: 90,
+                    objectFit: "cover",
+                    borderRadius: "8px",
+                    bgcolor: T.surface,
+                    border: `1px solid ${T.border}`
+                  }}
                 />
 
-                <div className="flex-1">
-                  <p className="font-medium">{item.productName}</p>
-                  <p className="text-sm text-gray-600">
-                    Qty: {item.quantity}
-                  </p>
-                  <p className="text-sm font-semibold">
-                    ₹{item.price}
-                  </p>
-                  {/* WRITE REVIEW BUTTON */}
-<button
-  onClick={() =>
-    navigate(`/review/${item.productId}/${order.orderNumber}`)
-  }
-  className="mt-2 text-sm text-orange-600 font-medium hover:underline"
->
-  Write a review
-</button>
+                {/* Info */}
+                <Box sx={{ flex: 1 }}>
+                  <Typography sx={{
+                    fontFamily: SYNE,
+                    fontSize: 14,
+                    fontWeight: 700,
+                    color: "#fff"
+                  }}>
+                    {item.productName}
+                  </Typography>
 
-                </div>
-              </div>
+                  <Typography sx={{
+                    fontSize: 12,
+                    color: T.muted
+                  }}>
+                    Qty: {item.quantity}
+                  </Typography>
+
+                  <Typography sx={{
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: T.gold
+                  }}>
+                    ₹{item.price}
+                  </Typography>
+
+                  {/* Review Button */}
+                  <Button
+                    onClick={() =>
+                      navigate(`/review/${item.productId}/${order.orderNumber}`)
+                    }
+                    sx={{
+                      mt: 1,
+                      px: 2,
+                      py: 0.8,
+                      borderRadius: "8px",
+                      border: `1.5px solid ${T.border}`,
+                      color: T.text,
+                      fontFamily: SYNE,
+                      fontSize: 11,
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                      letterSpacing: ".8px",
+                      "&:hover": {
+                        borderColor: T.gold,
+                        color: T.gold,
+                        bgcolor: "rgba(233,185,73,.05)"
+                      }
+                    }}
+                  >
+                    Write Review
+                  </Button>
+
+                </Box>
+
+              </Box>
             ))}
 
             {/* ACTION */}
-            <div className="mt-4 text-right">
-              <button
+            <Box sx={{ mt: 2, textAlign: "right" }}>
+              <Button
                 onClick={() => navigate(`/orders/${order.orderNumber}`)}
-                className="text-blue-600 font-medium hover:underline"
+                sx={{
+                  fontFamily: SYNE,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  letterSpacing: ".8px",
+                  color: T.gold,
+                  "&:hover": {
+                    textDecoration: "underline"
+                  }
+                }}
               >
-                View order details
-              </button>
-            </div>
-          </div>
-        </div>
+                View Order Details
+              </Button>
+            </Box>
+
+          </Box>
+        </Box>
       ))}
-    </div>
+
+      {/* Empty */}
+      {orders.length === 0 && (
+        <Typography sx={{
+          mt: 5,
+          textAlign: "center",
+          color: T.muted
+        }}>
+          No orders found 📦
+        </Typography>
+      )}
+
+    </Box>
   );
 }
