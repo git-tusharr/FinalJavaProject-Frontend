@@ -1,9 +1,6 @@
 import { useState, useMemo } from "react";
 import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
-import {
-  Box,
-  CssBaseline,
-} from "@mui/material";
+import { Box, CssBaseline, Tooltip } from "@mui/material";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
 
@@ -16,71 +13,57 @@ import SecurityIcon from "@mui/icons-material/Security";
 import HomeIcon from "@mui/icons-material/Home";
 import GroupIcon from "@mui/icons-material/Group";
 import LockIcon from "@mui/icons-material/Lock";
-import DarkModeIcon from "@mui/icons-material/DarkMode";
-import LightModeIcon from "@mui/icons-material/LightMode";
-import CloseIcon from "@mui/icons-material/Close";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import StorefrontIcon from "@mui/icons-material/Storefront";
 
 /* ── Brand tokens ── */
 const T = {
   black:   "#080808",
-  surface: "#111111",
+  surface: "#0e0e0e",
   card:    "#141414",
   border:  "#1e1e1e",
   gold:    "#E9B949",
   goldHov: "#f5c84e",
+  goldDim: "rgba(233,185,73,.08)",
+  goldRim: "rgba(233,185,73,.18)",
   red:     "#D0312D",
   text:    "#e2e2e2",
-  muted:   "#666666",
-  green:   "#4ade80",
+  muted:   "#555555",
+  muted2:  "#888888",
 };
+
 const SYNE = "'Syne', sans-serif";
 const DM   = "'DM Sans', sans-serif";
 
-const drawerWidth = 248;
+const DRAWER_FULL = 260;
+const DRAWER_MINI = 68;
 
-/* ── Nav item definition ── */
-const NAV_ITEMS = [
+/* ─── Nav structure ─────────────────────────────────────────── */
+const NAV = [
   {
-    label: "Create Product",
-    icon: <InventoryIcon fontSize="small" />,
-    to: "/admin/sellerpannel",
+    section: "Store",
+    items: [
+      { label: "Create Product", icon: <InventoryIcon sx={{ fontSize: 18 }} />, to: "/admin/sellerpannel" },
+      { label: "Manage Orders",  icon: <AssignmentIcon sx={{ fontSize: 18 }} />, to: "/admin/orders" },
+    ],
   },
   {
-    label: "Manage Orders",
-    icon: <AssignmentIcon fontSize="small" />,
-    to: "/admin/orders",
+    section: "Access Control",
+    items: [
+      { label: "Roles",         icon: <GroupIcon sx={{ fontSize: 18 }} />,     to: "/admin/create/roles" },
+      { label: "Permissions",   icon: <LockIcon sx={{ fontSize: 18 }} />,       to: "/admin/create/permissions" },
+      { label: "Assign Roles",  icon: <SecurityIcon sx={{ fontSize: 18 }} />,  to: "/admin/assign-role" },
+      { label: "RBAC Overview", icon: <DashboardIcon sx={{ fontSize: 18 }} />, to: "/admin/rbac/permissions" },
+    ],
   },
 ];
 
-const RBAC_ITEMS = [
-  {
-    label: "Roles",
-    icon: <GroupIcon fontSize="small" />,
-    to: "/admin/create/roles",
-  },
-  {
-    label: "Permissions",
-    icon: <LockIcon fontSize="small" />,
-    to: "/admin/create/permissions",
-  },
-  {
-    label: "Assign Roles",
-    icon: <SecurityIcon fontSize="small" />,
-    to: "/admin/assign-role",
-  },
-  {
-    label: "RBAC Overview",
-    icon: <DashboardIcon fontSize="small" />,
-    to: "/admin/rbac/permissions",
-  },
-];
+/* ─── Single nav item ────────────────────────────────────────── */
+function NavItem({ item, mini, onClick }) {
+  const { pathname } = useLocation();
+  const active = pathname === item.to || pathname.startsWith(item.to + "/");
 
-function NavItem({ item, collapsed, onClick }) {
-  const location = useLocation();
-  const active = location.pathname === item.to;
-
-  return (
+  const inner = (
     <Box
       component={Link}
       to={item.to}
@@ -88,387 +71,455 @@ function NavItem({ item, collapsed, onClick }) {
       sx={{
         display: "flex",
         alignItems: "center",
-        gap: collapsed ? 0 : 1.5,
-        justifyContent: collapsed ? "center" : "flex-start",
-        px: collapsed ? 0 : 1.5,
-        py: 1.1,
-        borderRadius: "8px",
+        gap: 1.4,
+        px: mini ? 0 : 1.6,
+        py: 1.05,
+        borderRadius: "10px",
         textDecoration: "none",
         fontFamily: DM,
         fontSize: 13.5,
         fontWeight: active ? 600 : 400,
-        color: active ? T.gold : T.muted,
-        bgcolor: active ? "rgba(233,185,73,.07)" : "transparent",
-        border: `1px solid ${active ? "rgba(233,185,73,.18)" : "transparent"}`,
-        transition: "all .18s",
-        overflow: "hidden",
-        whiteSpace: "nowrap",
+        color: active ? "#fff" : T.muted2,
+        bgcolor: active ? T.goldDim : "transparent",
+        border: `1px solid ${active ? T.goldRim : "transparent"}`,
+        justifyContent: mini ? "center" : "flex-start",
         position: "relative",
+        transition: "all .17s ease",
+        overflow: "hidden",
+        "&::after": active ? {
+          content: '""',
+          position: "absolute",
+          left: 0, top: "18%", bottom: "18%",
+          width: "3px",
+          borderRadius: "0 3px 3px 0",
+          background: `linear-gradient(180deg, ${T.gold}, ${T.goldHov})`,
+        } : {},
         "&:hover": {
           color: T.text,
           bgcolor: "rgba(255,255,255,.04)",
           borderColor: T.border,
         },
-        ...(active && {
-          "&::before": {
-            content: '""',
-            position: "absolute",
-            left: 0, top: "20%", bottom: "20%",
-            width: "3px",
-            borderRadius: "0 3px 3px 0",
-            bgcolor: T.gold,
-          },
-        }),
       }}
     >
-      <Box sx={{ color: active ? T.gold : T.muted, flexShrink: 0, display: "flex" }}>
+      <Box sx={{ color: active ? T.gold : T.muted, display: "flex", flexShrink: 0, transition: "color .17s" }}>
         {item.icon}
       </Box>
-      {!collapsed && item.label}
+      {!mini && <Box sx={{ lineHeight: 1.2 }}>{item.label}</Box>}
+      {active && !mini && (
+        <Box sx={{
+          ml: "auto", flexShrink: 0,
+          width: 6, height: 6, borderRadius: "50%",
+          bgcolor: T.gold, boxShadow: `0 0 8px ${T.gold}`,
+        }} />
+      )}
     </Box>
   );
+
+  return mini ? (
+    <Tooltip title={item.label} placement="right" arrow>
+      {inner}
+    </Tooltip>
+  ) : inner;
 }
 
-function SectionLabel({ label, collapsed }) {
-  if (collapsed) {
-    return (
-      <Box sx={{
-        height: "1px",
-        bgcolor: T.border,
-        mx: 1,
-        my: 1.5,
-      }} />
-    );
-  }
+/* ─── Sidebar ────────────────────────────────────────────────── */
+function Sidebar({ mini, onToggle, isMobile, onClose }) {
+  const navigate = useNavigate();
+  const username = localStorage.getItem("username") || "";
+  const avatarLetter = username ? username.split("@")[0].charAt(0).toUpperCase() : "A";
+  const displayName  = username ? username.split("@")[0] : "Admin";
+
+  // Read roles from localStorage and pick the most senior one to display
+  const rolesRaw = localStorage.getItem("roles");
+  const rolesArr = rolesRaw ? JSON.parse(rolesRaw) : [];
+  const ROLE_LABELS = {
+    SUPER_ADMIN: "Super Admin",
+    ADMIN:       "Admin",
+    SELLER:      "Seller",
+    USER:        "User",
+  };
+  const ROLE_PRIORITY = ["SUPER_ADMIN", "ADMIN", "SELLER", "USER"];
+  const topRole = ROLE_PRIORITY.find((r) => rolesArr.includes(r)) || rolesArr[0] || "Admin";
+  const roleLabel = ROLE_LABELS[topRole] || topRole;
+
   return (
     <Box sx={{
-      display: "flex", alignItems: "center", gap: 1.5,
-      px: 1.5, py: 0.5, mb: 0.5,
-    }}>
-      <Box sx={{ flex: 1, height: "1px", bgcolor: T.border }} />
-      <Box sx={{
-        fontFamily: SYNE,
-        fontSize: 9,
-        fontWeight: 700,
-        letterSpacing: "1.8px",
-        textTransform: "uppercase",
-        color: T.muted,
-        flexShrink: 0,
-      }}>
-        {label}
-      </Box>
-      <Box sx={{ flex: 1, height: "1px", bgcolor: T.border }} />
-    </Box>
-  );
-}
-
-export default function AdminLayout() {
-  const navigate = useNavigate();
-  const isMobile = useMediaQuery("(max-width:900px)");
-
-  const [drawerOpen, setDrawerOpen] = useState(!isMobile);
-  const [collapsed, setCollapsed]   = useState(false);
-  const [mode, setMode]             = useState("light");
-
-  const theme = useMemo(
-    () => createTheme({ palette: { mode, primary: { main: "#1976d2" } } }),
-    [mode]
-  );
-
-  const toggleDrawer  = () => setDrawerOpen((o) => !o);
-  const toggleTheme   = () => setMode((p) => (p === "light" ? "dark" : "light"));
-  const toggleCollapse = () => setCollapsed((c) => !c);
-
-  /* Effective drawer width */
-  const effectiveWidth = collapsed ? 64 : drawerWidth;
-
-  /* Shared drawer content */
-  const drawerContent = (
-    <Box sx={{
+      width: mini ? DRAWER_MINI : DRAWER_FULL,
+      height: "100%",
       display: "flex",
       flexDirection: "column",
-      height: "100%",
       bgcolor: T.surface,
       borderRight: `1px solid ${T.border}`,
+      transition: "width .22s cubic-bezier(.4,0,.2,1)",
+      overflow: "hidden",
+      position: "relative",
+      "&::after": {
+        content: '""',
+        position: "absolute",
+        top: 0, right: 0, bottom: 0, width: "1px",
+        background: `linear-gradient(180deg, transparent, rgba(233,185,73,.12) 40%, transparent)`,
+        pointerEvents: "none",
+      },
     }}>
-      {/* Sidebar brand header */}
+
+      {/* ── Logo header ── */}
       <Box sx={{
-        height: 64,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: collapsed ? "center" : "space-between",
-        px: collapsed ? 0 : 2,
+        height: 64, flexShrink: 0,
+        display: "flex", alignItems: "center",
+        justifyContent: mini ? "center" : "space-between",
+        px: mini ? 0 : 2.2,
         borderBottom: `1px solid ${T.border}`,
-        flexShrink: 0,
+        position: "relative", overflow: "hidden",
       }}>
-        {!collapsed && (
-          <Box sx={{
-            fontFamily: SYNE,
-            fontWeight: 800,
-            fontSize: 15,
-            color: T.text,
-            letterSpacing: ".2px",
-            "& em": { color: T.gold, fontStyle: "normal" },
-          }}>
-            Steal<em>Deals</em>
-            <Box component="span" sx={{
-              display: "block",
-              fontFamily: DM,
-              fontWeight: 400,
-              fontSize: 10,
-              letterSpacing: "1.6px",
-              textTransform: "uppercase",
-              color: T.muted,
-              mt: "-2px",
+        <Box sx={{
+          position: "absolute", top: -20, left: -10,
+          width: 120, height: 80, borderRadius: "50%",
+          bgcolor: "rgba(233,185,73,.04)", filter: "blur(20px)", pointerEvents: "none",
+        }} />
+
+        {!mini && (
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.2, zIndex: 1 }}>
+            <Box sx={{
+              width: 32, height: 32, borderRadius: "8px", bgcolor: T.gold,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: `0 0 16px rgba(233,185,73,.3)`, flexShrink: 0,
             }}>
-              Admin Panel
+              <StorefrontIcon sx={{ fontSize: 17, color: "#000" }} />
+            </Box>
+            <Box>
+              <Box sx={{
+                fontFamily: SYNE, fontWeight: 800, fontSize: 14, color: "#fff", lineHeight: 1,
+                "& em": { color: T.gold, fontStyle: "normal" },
+              }}>
+                Steal<em>Deals</em>
+              </Box>
+              <Box sx={{ fontFamily: DM, fontSize: 9.5, color: T.muted, letterSpacing: "1.8px", textTransform: "uppercase", mt: "2px" }}>
+                Admin Console
+              </Box>
             </Box>
           </Box>
         )}
-        {/* Collapse toggle (desktop only) */}
-        {!isMobile && (
-          <Box
-            component="button"
-            onClick={toggleCollapse}
-            sx={{
-              display: "flex", alignItems: "center", justifyContent: "center",
-              width: 28, height: 28, borderRadius: "6px",
-              bgcolor: "transparent",
-              border: `1px solid ${T.border}`,
-              color: T.muted, cursor: "pointer",
-              transition: "all .2s",
-              flexShrink: 0,
-              "&:hover": { borderColor: T.gold, color: T.gold },
-            }}
-          >
-            <ChevronLeftIcon sx={{
-              fontSize: 16,
-              transition: "transform .2s",
-              transform: collapsed ? "rotate(180deg)" : "rotate(0deg)",
-            }} />
+
+        {mini && (
+          <Box sx={{
+            width: 34, height: 34, borderRadius: "9px", bgcolor: T.gold,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: `0 0 14px rgba(233,185,73,.25)`,
+          }}>
+            <StorefrontIcon sx={{ fontSize: 17, color: "#000" }} />
           </Box>
         )}
-        {/* Mobile close */}
-        {isMobile && (
-          <Box
-            component="button"
-            onClick={toggleDrawer}
-            sx={{
-              display: "flex", alignItems: "center", justifyContent: "center",
-              width: 28, height: 28, borderRadius: "6px",
-              bgcolor: "transparent", border: `1px solid ${T.border}`,
-              color: T.muted, cursor: "pointer",
-              "&:hover": { borderColor: T.red, color: T.red },
-            }}
-          >
-            <CloseIcon sx={{ fontSize: 16 }} />
-          </Box>
+
+        {!isMobile && (
+          <Tooltip title={mini ? "Expand" : "Collapse"} placement="right">
+            <Box
+              component="button"
+              onClick={onToggle}
+              sx={{
+                zIndex: 1,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                width: 26, height: 26, borderRadius: "6px",
+                bgcolor: T.card, border: `1px solid ${T.border}`,
+                color: T.muted, cursor: "pointer", flexShrink: 0,
+                transition: "all .18s",
+                "&:hover": { borderColor: T.gold, color: T.gold, bgcolor: T.goldDim },
+              }}
+            >
+              <ChevronLeftIcon sx={{
+                fontSize: 15, transition: "transform .22s",
+                transform: mini ? "rotate(180deg)" : "rotate(0deg)",
+              }} />
+            </Box>
+          </Tooltip>
         )}
       </Box>
 
-      {/* Nav links */}
-      <Box sx={{ flex: 1, overflowY: "auto", px: collapsed ? 1 : 1.5, pt: 2, pb: 1,
+      {/* ── Nav items ── */}
+      <Box sx={{
+        flex: 1, overflowY: "auto", overflowX: "hidden",
+        px: mini ? 1 : 1.6, pt: 2, pb: 1,
         scrollbarWidth: "none", "&::-webkit-scrollbar": { display: "none" },
       }}>
-        <SectionLabel label="Catalog" collapsed={collapsed} />
-        <Box sx={{ display: "flex", flexDirection: "column", gap: .5, mb: 1 }}>
-          {NAV_ITEMS.map((item) => (
-            <NavItem key={item.to} item={item} collapsed={collapsed} onClick={isMobile ? toggleDrawer : undefined} />
-          ))}
-        </Box>
+        {NAV.map((group) => (
+          <Box key={group.section} sx={{ mb: 2.5 }}>
+            {!mini ? (
+              <Box sx={{
+                fontFamily: SYNE, fontSize: 9, fontWeight: 700,
+                letterSpacing: "2px", textTransform: "uppercase",
+                color: T.muted, px: 1.6, mb: 1,
+              }}>
+                {group.section}
+              </Box>
+            ) : (
+              <Box sx={{ height: "1px", bgcolor: T.border, mb: 1.5, mx: .5 }} />
+            )}
+            <Box sx={{ display: "flex", flexDirection: "column", gap: .5 }}>
+              {group.items.map((item) => (
+                <NavItem key={item.to} item={item} mini={mini} onClick={isMobile ? onClose : undefined} />
+              ))}
+            </Box>
+          </Box>
+        ))}
+      </Box>
 
-        <SectionLabel label="Access Control" collapsed={collapsed} />
-        <Box sx={{ display: "flex", flexDirection: "column", gap: .5 }}>
-          {RBAC_ITEMS.map((item) => (
-            <NavItem key={item.to} item={item} collapsed={collapsed} onClick={isMobile ? toggleDrawer : undefined} />
-          ))}
+      {/* ── User footer ── */}
+      <Box sx={{
+        borderTop: `1px solid ${T.border}`, p: mini ? 1 : 1.8,
+        flexShrink: 0, bgcolor: "rgba(0,0,0,.25)",
+      }}>
+        {mini ? (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1, alignItems: "center" }}>
+            <Tooltip title={displayName} placement="right">
+              <Box sx={{
+                width: 34, height: 34, borderRadius: "9px",
+                background: `linear-gradient(135deg, ${T.gold}, ${T.goldHov})`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontFamily: SYNE, fontWeight: 800, fontSize: 14, color: "#000", cursor: "default",
+              }}>
+                {avatarLetter}
+              </Box>
+            </Tooltip>
+            <Tooltip title="Back to site" placement="right">
+              <Box
+                component="button" onClick={() => navigate("/")}
+                sx={{
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  width: 34, height: 34, borderRadius: "9px",
+                  bgcolor: "transparent", border: `1px solid ${T.border}`,
+                  color: T.muted, cursor: "pointer", transition: "all .18s",
+                  "&:hover": { borderColor: T.gold, color: T.gold, bgcolor: T.goldDim },
+                }}
+              >
+                <HomeIcon sx={{ fontSize: 16 }} />
+              </Box>
+            </Tooltip>
+          </Box>
+        ) : (
+          <Box>
+            {/* User card */}
+            <Box sx={{
+              display: "flex", alignItems: "center", gap: 1.4,
+              p: 1.2, borderRadius: "10px", bgcolor: T.card,
+              border: `1px solid ${T.border}`, mb: 1.2,
+            }}>
+              <Box sx={{
+                width: 34, height: 34, borderRadius: "9px",
+                background: `linear-gradient(135deg, ${T.gold}, ${T.goldHov})`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontFamily: SYNE, fontWeight: 800, fontSize: 14, color: "#000", flexShrink: 0,
+                boxShadow: `0 4px 12px rgba(233,185,73,.2)`,
+              }}>
+                {avatarLetter}
+              </Box>
+              <Box sx={{ minWidth: 0 }}>
+                <Box sx={{
+                  fontFamily: DM, fontWeight: 600, fontSize: 13, color: T.text, lineHeight: 1.2,
+                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                }}>
+                  {displayName}
+                </Box>
+                <Box sx={{ fontFamily: DM, fontSize: 10.5, color: T.muted, letterSpacing: ".4px" }}>
+                  {roleLabel}
+                </Box>
+              </Box>
+              <Box sx={{
+                ml: "auto", flexShrink: 0, px: 1, py: .3, borderRadius: "5px",
+                bgcolor: topRole === "SUPER_ADMIN" ? "rgba(208,49,45,.1)" : T.goldDim,
+                border: `1px solid ${topRole === "SUPER_ADMIN" ? "rgba(208,49,45,.3)" : T.goldRim}`,
+                fontFamily: SYNE, fontWeight: 700, fontSize: 9,
+                letterSpacing: "1px", textTransform: "uppercase",
+                color: topRole === "SUPER_ADMIN" ? T.red : T.gold,
+              }}>
+                {topRole === "SUPER_ADMIN" ? "Super" : roleLabel}
+              </Box>
+            </Box>
+
+            <Box
+              component="button" onClick={() => navigate("/")}
+              sx={{
+                width: "100%", display: "flex", alignItems: "center",
+                justifyContent: "center", gap: 1, py: 1, px: 1.5,
+                borderRadius: "9px", bgcolor: "transparent",
+                border: `1px solid ${T.border}`, color: T.muted2,
+                fontFamily: DM, fontSize: 12.5, fontWeight: 500, cursor: "pointer",
+                transition: "all .18s",
+                "&:hover": { borderColor: T.gold, color: T.gold, bgcolor: T.goldDim, boxShadow: `0 0 20px rgba(233,185,73,.07)` },
+              }}
+            >
+              <HomeIcon sx={{ fontSize: 15 }} />
+              Back to Site
+            </Box>
+          </Box>
+        )}
+      </Box>
+    </Box>
+  );
+}
+
+/* ─── Top bar ────────────────────────────────────────────────── */
+function TopBar({ onMenuClick, isMobile }) {
+  const { pathname } = useLocation();
+  const allItems = NAV.flatMap((g) => g.items);
+  const active   = allItems.find((i) => pathname.startsWith(i.to));
+  const pageTitle = active?.label ?? "Dashboard";
+
+  return (
+    <Box sx={{
+      position: "fixed", top: 0, left: 0, right: 0,
+      height: 64, zIndex: 1300,
+      bgcolor: "rgba(8,8,8,.9)",
+      backdropFilter: "blur(20px)",
+      borderBottom: `1px solid ${T.border}`,
+      display: "flex", alignItems: "center",
+      px: { xs: 2, sm: 3 }, gap: 2,
+    }}>
+      {/* Shimmer accent line */}
+      <Box sx={{
+        position: "absolute", bottom: 0, left: 0, right: 0, height: "1.5px",
+        background: `linear-gradient(90deg, transparent 0%, ${T.gold} 30%, ${T.goldHov} 60%, transparent 100%)`,
+        opacity: .5,
+      }} />
+
+      {isMobile && (
+        <Box
+          component="button" onClick={onMenuClick}
+          sx={{
+            display: "flex", alignItems: "center", justifyContent: "center",
+            width: 38, height: 38, borderRadius: "9px",
+            bgcolor: T.card, border: `1px solid ${T.border}`,
+            color: T.text, cursor: "pointer", flexShrink: 0, transition: "all .18s",
+            "&:hover": { borderColor: T.gold, color: T.gold },
+          }}
+        >
+          <MenuIcon sx={{ fontSize: 19 }} />
+        </Box>
+      )}
+
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Box sx={{ fontFamily: SYNE, fontWeight: 800, fontSize: { xs: 14, sm: 16 }, color: "#fff", whiteSpace: "nowrap" }}>
+            {pageTitle}
+          </Box>
+          <Box sx={{
+            width: 5, height: 5, borderRadius: "50%",
+            bgcolor: T.gold, flexShrink: 0, boxShadow: `0 0 8px ${T.gold}`,
+          }} />
+        </Box>
+        <Box sx={{
+          fontFamily: DM, fontSize: 11, color: T.muted,
+          letterSpacing: ".8px", textTransform: "uppercase",
+          display: { xs: "none", sm: "block" },
+        }}>
+          Admin / {pageTitle}
         </Box>
       </Box>
 
-      {/* Bottom actions */}
+      {/* Live badge */}
       <Box sx={{
-        borderTop: `1px solid ${T.border}`,
-        px: collapsed ? 1 : 1.5,
-        py: 1.5,
-        display: "flex",
-        flexDirection: collapsed ? "column" : "row",
-        gap: 1,
+        display: { xs: "none", md: "flex" },
+        alignItems: "center", gap: .8,
+        px: 1.6, py: .7, borderRadius: "8px",
+        bgcolor: T.goldDim, border: `1px solid ${T.goldRim}`,
       }}>
-        {/* Back to site */}
-        <Box
-          component="button"
-          onClick={() => navigate("/")}
-          sx={{
-            flex: collapsed ? "none" : 1,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            gap: .8,
-            py: 1, px: 1.5,
-            bgcolor: "transparent",
-            border: `1px solid ${T.border}`,
-            borderRadius: "7px",
-            color: T.muted,
-            fontFamily: DM, fontSize: 12, fontWeight: 500,
-            cursor: "pointer",
-            transition: "all .18s",
-            "&:hover": { borderColor: T.gold, color: T.gold, bgcolor: "rgba(233,185,73,.05)" },
-          }}
-        >
-          <HomeIcon sx={{ fontSize: 15 }} />
-          {!collapsed && "Back to site"}
-        </Box>
-
-        {/* Theme toggle */}
-        <Box
-          component="button"
-          onClick={toggleTheme}
-          sx={{
-            display: "flex", alignItems: "center", justifyContent: "center",
-            width: collapsed ? "100%" : 36, height: 36,
-            bgcolor: "transparent",
-            border: `1px solid ${T.border}`,
-            borderRadius: "7px",
-            color: T.muted, cursor: "pointer",
-            transition: "all .18s",
-            "&:hover": { borderColor: T.gold, color: T.gold, bgcolor: "rgba(233,185,73,.05)" },
-          }}
-        >
-          {mode === "dark"
-            ? <LightModeIcon sx={{ fontSize: 15 }} />
-            : <DarkModeIcon  sx={{ fontSize: 15 }} />}
+        <Box sx={{
+          width: 6, height: 6, borderRadius: "50%",
+          bgcolor: T.gold, boxShadow: `0 0 6px ${T.gold}`,
+          animation: "pulse 2s infinite",
+          "@keyframes pulse": {
+            "0%, 100%": { opacity: 1 },
+            "50%": { opacity: .4 },
+          },
+        }} />
+        <Box sx={{
+          fontFamily: SYNE, fontWeight: 700, fontSize: 10,
+          letterSpacing: "1.5px", textTransform: "uppercase", color: T.gold,
+        }}>
+          Live
         </Box>
       </Box>
     </Box>
   );
+}
+
+/* ─── AdminLayout (root) ────────────────────────────────────── */
+export default function AdminLayout() {
+  const isMobile = useMediaQuery("(max-width:900px)");
+
+  const [drawerOpen, setDrawerOpen] = useState(true);
+  const [mini, setMini]             = useState(false);
+  const [mode]                      = useState("dark");
+
+  const theme = useMemo(
+    () => createTheme({ palette: { mode, primary: { main: T.gold } } }),
+    [mode]
+  );
+
+  const effectiveWidth = !drawerOpen ? 0 : mini ? DRAWER_MINI : DRAWER_FULL;
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
 
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
+      `}</style>
+
       <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: T.black, fontFamily: DM }}>
 
-        {/* ── Top AppBar ── */}
-        <Box sx={{
-          position: "fixed",
-          top: 0, left: 0, right: 0,
-          zIndex: 1300,
-          height: 64,
-          bgcolor: T.black,
-          borderBottom: `1px solid ${T.border}`,
-          display: "flex",
-          alignItems: "center",
-          px: 2,
-          gap: 2,
-          boxShadow: "0 2px 20px rgba(0,0,0,.6)",
-        }}>
-          {/* Hamburger (mobile) */}
-          {isMobile && (
-            <Box
-              component="button"
-              onClick={toggleDrawer}
-              sx={{
-                display: "flex", alignItems: "center", justifyContent: "center",
-                width: 36, height: 36,
-                bgcolor: "transparent",
-                border: `1px solid ${T.border}`,
-                borderRadius: "7px",
-                color: T.text, cursor: "pointer", flexShrink: 0,
-                transition: "all .18s",
-                "&:hover": { borderColor: T.gold, color: T.gold },
-              }}
-            >
-              <MenuIcon sx={{ fontSize: 18 }} />
-            </Box>
-          )}
-
-          {/* Title */}
-          <Box sx={{ flex: 1 }}>
-            <Box sx={{
-              fontFamily: SYNE,
-              fontWeight: 800,
-              fontSize: 16,
-              color: T.text,
-              lineHeight: 1,
-            }}>
-              Admin{" "}
-              <Box component="span" sx={{ color: T.gold }}>Panel</Box>
-            </Box>
-            <Box sx={{
-              fontFamily: DM,
-              fontSize: 11,
-              color: T.muted,
-              letterSpacing: "1.2px",
-              textTransform: "uppercase",
-              mt: "2px",
-            }}>
-              StealDeals Management
-            </Box>
-          </Box>
-
-          {/* Top gradient bar at bottom of appbar */}
+        {/* ── Desktop sidebar ── */}
+        {!isMobile && (
           <Box sx={{
-            position: "absolute",
-            bottom: 0, left: 0, right: 0,
-            height: 2,
-            background: `linear-gradient(90deg, ${T.red}, ${T.gold})`,
-          }} />
-        </Box>
-
-        {/* ── Sidebar Drawer ── */}
-        {isMobile ? (
-          /* Mobile overlay */
-          <>
-            {drawerOpen && (
-              <Box
-                onClick={toggleDrawer}
-                sx={{
-                  position: "fixed", inset: 0, zIndex: 1200,
-                  bgcolor: "rgba(0,0,0,.6)", backdropFilter: "blur(2px)",
-                }}
-              />
-            )}
-            <Box sx={{
-              position: "fixed",
-              top: 0, left: 0, bottom: 0,
-              zIndex: 1250,
-              width: drawerWidth,
-              transform: drawerOpen ? "translateX(0)" : `translateX(-${drawerWidth}px)`,
-              transition: "transform .25s cubic-bezier(.4,0,.2,1)",
-            }}>
-              {drawerContent}
-            </Box>
-          </>
-        ) : (
-          /* Desktop persistent */
-          <Box sx={{
-            position: "fixed",
-            top: 0, left: 0, bottom: 0,
+            position: "fixed", top: 0, left: 0, bottom: 0,
             zIndex: 1200,
-            width: drawerOpen ? effectiveWidth : 0,
-            overflow: "hidden",
+            width: effectiveWidth,
             transition: "width .22s cubic-bezier(.4,0,.2,1)",
+            overflow: "hidden", flexShrink: 0,
           }}>
-            <Box sx={{ width: effectiveWidth }}>
-              {drawerContent}
-            </Box>
+            <Sidebar mini={mini} onToggle={() => setMini((m) => !m)} isMobile={false} />
           </Box>
         )}
 
-        {/* ── Main content ── */}
+        {/* ── Mobile overlay drawer ── */}
+        {isMobile && drawerOpen && (
+          <>
+            <Box
+              onClick={() => setDrawerOpen(false)}
+              sx={{
+                position: "fixed", inset: 0, zIndex: 1200,
+                bgcolor: "rgba(0,0,0,.75)", backdropFilter: "blur(6px)",
+              }}
+            />
+            <Box sx={{
+              position: "fixed", top: 0, left: 0, bottom: 0,
+              zIndex: 1250, width: DRAWER_FULL,
+              boxShadow: "8px 0 48px rgba(0,0,0,.7)",
+            }}>
+              <Sidebar mini={false} onToggle={() => {}} isMobile={true} onClose={() => setDrawerOpen(false)} />
+            </Box>
+          </>
+        )}
+
+        {/* ── Top bar ── */}
+        <TopBar onMenuClick={() => setDrawerOpen((o) => !o)} isMobile={isMobile} />
+
+        {/* ── Main content area ── */}
         <Box
           component="main"
           sx={{
             flexGrow: 1,
-            ml: !isMobile && drawerOpen ? `${effectiveWidth}px` : 0,
+            ml: !isMobile ? `${effectiveWidth}px` : 0,
             mt: "64px",
-            p: { xs: 2, sm: 3 },
-            transition: "margin-left .22s cubic-bezier(.4,0,.2,1)",
             minHeight: "calc(100vh - 64px)",
-            display: "flex",
-            justifyContent: "center",
-            bgcolor: T.black,
+            transition: "margin-left .22s cubic-bezier(.4,0,.2,1)",
+            p: { xs: 2, sm: 3, md: 4 },
+            background: `
+              radial-gradient(ellipse at 80% 0%, rgba(233,185,73,.04) 0%, transparent 50%),
+              radial-gradient(ellipse at 10% 90%, rgba(208,49,45,.03) 0%, transparent 50%),
+              ${T.black}
+            `,
           }}
         >
-          <Box sx={{ width: "100%", maxWidth: 1200 }}>
+          <Box sx={{ maxWidth: 1200, mx: "auto" }}>
             <Outlet />
           </Box>
         </Box>
