@@ -10,7 +10,7 @@ import { useCart } from "../services/CartContext";
 import GoogleLoginButton from "../components/GoogleLoginButton";
 import logo from "../assets/logo.png";
 
-/* ── brand tokens (same as register) ── */
+/* ── brand tokens ── */
 const T = {
   black: "#080808",
   surface: "#111111",
@@ -71,17 +71,20 @@ export default function Login() {
     setLoading(true);
     try {
       const token = await authController.login(data);
+
+      /* ── 1. Store token ── */
       localStorage.setItem("token", token);
 
       let roles = [];
 
+      /* ── 2. Decode JWT and store all fields immediately ── */
       try {
         const payloadBase64 = token.split(".")[1];
         const decoded = JSON.parse(atob(payloadBase64));
 
-        if (decoded.userId) localStorage.setItem("userId", decoded.userId);
+        if (decoded.userId)  localStorage.setItem("userId",   decoded.userId);
         if (decoded.username) localStorage.setItem("username", decoded.username);
-        if (decoded.sub) localStorage.setItem("email", decoded.sub);
+        if (decoded.sub)     localStorage.setItem("email",    decoded.sub);
 
         if (decoded.roles && Array.isArray(decoded.roles)) {
           roles = decoded.roles;
@@ -91,6 +94,12 @@ export default function Login() {
         console.warn("JWT decode failed");
       }
 
+      /* ── 3. Dispatch storage event so Navbar re-reads localStorage ──
+              window.dispatchEvent is needed because the storage event
+              only fires across tabs by default, not in the same tab.   */
+      window.dispatchEvent(new Event("storage"));
+
+      /* ── 4. Load cart, then redirect ── */
       await loadCartCount();
 
       if (roles.includes("SUPER_ADMIN") || roles.includes("ADMIN")) {
@@ -247,7 +256,7 @@ export default function Login() {
 
           {/* Register link */}
           <Typography sx={{ textAlign: "center", mt: 3, fontSize: 13, color: T.muted }}>
-            Don’t have an account?{" "}
+            Don't have an account?{" "}
             <Box component={Link} to="/register" sx={{
               color: T.gold,
               textDecoration: "none",
