@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import { useEffect, useState } from "react";
 import {
   Box,
@@ -29,7 +30,7 @@ export default function BrandStep({ onNext }) {
 
   const handleConfirm = () => {
     if (!selectedBrand) {
-      alert("Please select a brand");
+      toast.success("Please select a brand");
       return;
     }
 
@@ -38,7 +39,7 @@ export default function BrandStep({ onNext }) {
       brandId: selectedBrand.id
     });
   onNext();
-    alert("Brand selected successfully");
+    toast.success("Brand selected successfully");
   };
 
   return (

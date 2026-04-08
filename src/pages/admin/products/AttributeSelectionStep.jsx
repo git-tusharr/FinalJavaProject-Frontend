@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import { useEffect, useState } from "react";
 import {
   Box,
@@ -34,7 +35,7 @@ export default function AttributeSelectionStep({ onNext }) {
 
   const handleSave = async () => {
     if (selected.length === 0) {
-      alert("Select at least one attribute");
+      toast.success("Select at least one attribute");
       return;
     }
 

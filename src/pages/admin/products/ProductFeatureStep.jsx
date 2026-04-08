@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import { useEffect, useState } from "react";
 import {
   Box,
@@ -44,7 +45,7 @@ export default function ProductFeatureStep({ onNext }) {
   // 💾 Save all
   const saveFeatures = async () => {
     if (features.length === 0) {
-      alert("Add at least one feature");
+      toast.success("Add at least one feature");
       return;
     }
 
@@ -53,7 +54,7 @@ export default function ProductFeatureStep({ onNext }) {
       features
     );
 
-    alert("Features saved");
+    toast.success("Features saved");
     onNext();
   };
 

@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import { useEffect, useState } from "react";
 import {
   getRoles,
@@ -26,7 +27,7 @@ export default function RolePermissions() {
 
   const save = async () => {
     await assignPermissionsToRole(roleId, selected);
-    alert("Permissions updated");
+    toast.success("Permissions updated");
   };
 
   return (

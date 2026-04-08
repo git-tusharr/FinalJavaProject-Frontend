@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
@@ -74,7 +75,7 @@ export default function Register() {
     setLoading(true);
     try {
       await authController.register(user);
-      alert("Registered successfully. Verify OTPs.");
+      toast.success("Registered successfully. Verify OTPs.");
       navigate("/verify-email");
     } finally {
       setLoading(false);

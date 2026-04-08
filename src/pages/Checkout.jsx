@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import { useEffect, useState } from "react";
 import { Box, Button, Typography, IconButton } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -82,23 +83,23 @@ export default function Checkout() {
             paymentId: razorpayPaymentId,
           })
             .then(() => {
-              alert("Payment submitted! Checking status...");
+              toast.success("Payment submitted! Checking status...");
               checkOrderStatus(razorpayOrderId);
             })
             .catch(() => {
-              alert("Payment done but order update failed.");
+              toast.success("Payment done but order update failed.");
             });
         },
       };
 
       const rzp = new window.Razorpay(options);
       rzp.on("payment.failed", (res) => {
-        alert("Payment Failed: " + res.error.description);
+        toast.success("Payment Failed: " + res.error.description);
       });
       rzp.open();
 
     } catch {
-      alert("Payment setup failed");
+      toast.success("Payment setup failed");
     } finally {
       setLoading(false);
     }
@@ -117,7 +118,7 @@ export default function Checkout() {
         name: "My Store Subscription",
         handler: function (response) {
           const subId = response.razorpay_subscription_id;
-          alert("Subscription created! Checking status...");
+          toast.success("Subscription created! Checking status...");
           checkSubscriptionStatus(subId);
         },
       };
@@ -126,7 +127,7 @@ export default function Checkout() {
       rzp.open();
 
     } catch {
-      alert("Subscription failed");
+      toast.success("Subscription failed");
     }
   };
 
@@ -139,13 +140,13 @@ export default function Checkout() {
         const res = await API.get(`/payment/status/order/${orderId}`);
         if (res.data === "PAID") {
           clearInterval(interval);
-          alert("Payment Confirmed! Your order has been placed.");
+          toast.success("Payment Confirmed! Your order has been placed.");
           setCartItems([]);
         }
       } catch {}
       if (attempts >= 10) {
         clearInterval(interval);
-        alert("Still pending. Please check later.");
+        toast.success("Still pending. Please check later.");
       }
     }, 2000);
   };
@@ -159,12 +160,12 @@ export default function Checkout() {
         const res = await API.get(`/payment/status/subscription/${subId}`);
         if (res.data === "ACTIVE") {
           clearInterval(interval);
-          alert("Subscription Active!");
+          toast.success("Subscription Active!");
         }
       } catch {}
       if (attempts >= 10) {
         clearInterval(interval);
-        alert("Still pending.");
+        toast.success("Still pending.");
       }
     }, 2000);
   };

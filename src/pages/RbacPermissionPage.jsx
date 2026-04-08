@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import { useEffect, useState } from "react";
 import {
   getRolePermissions,
@@ -32,7 +33,7 @@ export default function RbacPermissionPage() {
   // ✅ Prevent invalid role selection
   const onRoleChange = (id) => {
     if (currentUserRoles.includes("ADMIN") && id === 2) {
-      alert("Only SUPER_ADMIN can manage ADMIN role");
+      toast.success("Only SUPER_ADMIN can manage ADMIN role");
       return;
     }
     setRoleId(id);
@@ -56,7 +57,7 @@ export default function RbacPermissionPage() {
         setSelected(assigned);
       })
       .catch(() => {
-        alert("You are not allowed to manage this role");
+        toast.success("You are not allowed to manage this role");
         setPermissions({});
         setSelected(new Set());
       })
@@ -74,8 +75,8 @@ export default function RbacPermissionPage() {
   // 💾 Save permissions
   const savePermissions = () => {
     updateRolePermissions(roleId, Array.from(selected))
-      .then(() => alert("Permissions updated successfully"))
-      .catch(() => alert("Update failed"));
+      .then(() => toast.success("Permissions updated successfully"))
+      .catch(() => toast.success("Update failed"));
   };
 
   return (

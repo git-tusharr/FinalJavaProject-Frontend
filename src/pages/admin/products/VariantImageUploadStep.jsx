@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import { useEffect, useState } from "react";
 import {
   Box,
@@ -131,7 +132,7 @@ export default function VariantImageUploadStep({ onNext }) {
   /* Upload to backend */
   const uploadImages = async () => {
     if (!variantId || images.length === 0) {
-      alert("Select variant and images");
+      toast.success("Select variant and images");
       return;
     }
 
@@ -146,7 +147,7 @@ export default function VariantImageUploadStep({ onNext }) {
       }
     );
 
-    alert("Images uploaded successfully");
+    toast.success("Images uploaded successfully");
     onNext();
   };
 

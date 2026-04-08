@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Box, Button, Typography, IconButton } from "@mui/material";
@@ -65,11 +66,11 @@ export default function CartPage() {
   const checkout = async () => {
     try {
       await API.post(`/checkout/${userId}`);
-      alert("Checkout successful!");
+      toast.success("Checkout successful!");
       loadCart();
       navigate("/checkout");
     } catch (err) {
-      alert("Checkout failed!");
+      toast.success("Checkout failed!");
     }
   };
 

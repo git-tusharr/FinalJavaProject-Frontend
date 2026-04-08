@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import { useState } from "react";
 import {
   DndContext,
@@ -92,7 +93,7 @@ export default function ImageUploadStep() {
 
   const uploadImages = async () => {
     if (images.length === 0) {
-      alert("Add images first");
+      toast.success("Add images first");
       return;
     }
 
@@ -107,7 +108,7 @@ export default function ImageUploadStep() {
       }
     );
 
-    alert("Images uploaded successfully");
+    toast.success("Images uploaded successfully");
     setImages([]);
   };
 

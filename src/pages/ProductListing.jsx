@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -47,7 +48,7 @@ export default function ProductListing() {
       const variants = variantRes.data;
 
       if (!variants.length) {
-        alert("No variants available!");
+        toast.success("No variants available!");
         return;
       }
 
@@ -61,11 +62,11 @@ export default function ProductListing() {
       });
 
       loadCartCount();
-      alert("Added to cart");
+      toast.success("Added to cart");
 
     } catch (err) {
       console.error(err);
-      alert("Failed to add to cart");
+      toast.success("Failed to add to cart");
     }
   };
 

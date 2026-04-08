@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import { useEffect } from "react";
 import { authController } from "../controllers/authController";
 import { useNavigate } from "react-router-dom";
@@ -33,7 +34,7 @@ export default function GoogleLoginButton() {
       navigate("/");
 
     } catch (err) {
-      alert("Google Login Failed");
+      toast.success("Google Login Failed");
     }
   };
 

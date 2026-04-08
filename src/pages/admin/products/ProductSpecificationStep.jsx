@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import { useEffect, useState } from "react";
 import {
   Box,
@@ -55,7 +56,7 @@ export default function ProductSpecificationStep({ onNext }) {
     );
 
     if (validSpecs.length === 0) {
-      alert("Add at least one specification");
+      toast.success("Add at least one specification");
       return;
     }
 
@@ -64,7 +65,7 @@ export default function ProductSpecificationStep({ onNext }) {
       validSpecs
     );
 
-    alert("Specifications saved");
+    toast.success("Specifications saved");
     onNext();
   };
 

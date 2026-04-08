@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import { useEffect, useState } from "react";
 import {
   Box,
@@ -47,7 +48,7 @@ export default function ProductVideoStep({ onNext }) {
   // SAVE BULK
   const saveVideos = async () => {
     if (videos.length === 0) {
-      alert("Add at least one video");
+      toast.success("Add at least one video");
       return;
     }
 
@@ -56,7 +57,7 @@ export default function ProductVideoStep({ onNext }) {
       videos // ARRAY BULK
     );
 
-    alert("Videos saved successfully");
+    toast.success("Videos saved successfully");
     onNext();
   };
 

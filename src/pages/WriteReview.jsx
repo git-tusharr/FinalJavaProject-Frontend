@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import API from "../api/axiosInstance";
@@ -17,7 +18,7 @@ export default function WriteReview() {
     const userId = localStorage.getItem("userId");
 
     if (!rating || !review.trim()) {
-      alert("Please give rating and review");
+      toast.success("Please give rating and review");
       return;
     }
 
@@ -29,7 +30,7 @@ export default function WriteReview() {
       reviewText: review
     });
 
-    alert("Review submitted successfully");
+    toast.success("Review submitted successfully");
     navigate("/orders/My");
   };
 

@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import { useState } from "react";
 import { assignRoleToUser } from "../../services/rbacService";
 
@@ -7,7 +8,7 @@ export default function AssignRole() {
 
   const submit = async () => {
     await assignRoleToUser(userId, roleId);
-    alert("Role assigned");
+    toast.success("Role assigned");
   };
 
   return (

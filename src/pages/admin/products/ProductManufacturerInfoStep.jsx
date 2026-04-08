@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import { Box, Typography, TextField, Button } from "@mui/material";
 import { useEffect, useState } from "react";
 import axios from "axios";
@@ -26,7 +27,7 @@ export default function ProductManufacturerInfoStep({ onNext }) {
 
   const saveManufacturerInfo = async () => {
     if (!content.trim()) {
-      alert("Manufacturer description cannot be empty");
+      toast.success("Manufacturer description cannot be empty");
       return;
     }
 

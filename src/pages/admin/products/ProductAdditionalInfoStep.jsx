@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import { useEffect, useState } from "react";
 import {
   Box,
@@ -47,7 +48,7 @@ export default function ProductAdditionalInfoStep({ onNext }) {
   // SAVE BULK TO BACKEND
   const saveInfo = async () => {
     if (info.length === 0) {
-      alert("Add at least one entry");
+      toast.success("Add at least one entry");
       return;
     }
 
@@ -56,7 +57,7 @@ export default function ProductAdditionalInfoStep({ onNext }) {
       info // already correct shape!
     );
 
-    alert("Additional Information saved");
+    toast.success("Additional Information saved");
     onNext();
   };
 

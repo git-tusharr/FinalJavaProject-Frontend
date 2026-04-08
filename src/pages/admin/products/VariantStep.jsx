@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import { useEffect, useState } from "react";
 import {
   Box,
@@ -51,7 +52,7 @@ export default function VariantStep({ onNext }) {
       !form.stock ||
       Object.keys(selectedAttributes).length !== attributes.length
     ) {
-      alert("Select all attributes and fill all fields");
+      toast.success("Select all attributes and fill all fields");
       return;
     }
 

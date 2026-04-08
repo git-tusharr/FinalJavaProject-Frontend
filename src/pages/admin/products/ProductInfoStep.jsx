@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import { useState } from "react";
 import {
   Box,
@@ -26,7 +27,7 @@ export default function ProductInfoStep({ onNext }) {
 
   const handleSubmit = async () => {
     if (!form.name || !form.slug || !form.description) {
-      alert("All fields are required");
+      toast.success("All fields are required");
       return;
     }
 
@@ -48,7 +49,7 @@ export default function ProductInfoStep({ onNext }) {
 
       onNext(); // move to Attribute step
     } catch (err) {
-      alert("Product creation failed");
+      toast.success("Product creation failed");
     }
   };
 

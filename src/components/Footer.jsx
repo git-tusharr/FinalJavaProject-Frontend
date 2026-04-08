@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import { Link, useNavigate } from "react-router-dom";
 import LocalOfferIcon      from "@mui/icons-material/LocalOffer";
 import ShoppingBagIcon     from "@mui/icons-material/ShoppingBag";
@@ -367,7 +368,7 @@ export default function Footer() {
     e.preventDefault();
     const input = e.target.querySelector("input");
     if (input.value.trim()) {
-      alert("Thanks for subscribing!");
+      toast.success("Thanks for subscribing!");
       input.value = "";
     }
   };

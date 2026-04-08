@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
@@ -111,7 +112,7 @@ export default function Login() {
       }
 
     } catch {
-      alert("Invalid credentials");
+      toast.success("Invalid credentials");
     } finally {
       setLoading(false);
     }

@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import { useEffect, useState } from "react";
 import { Box, Button, TextField, Typography, Chip } from "@mui/material";
 import axios from "axios";
@@ -21,7 +22,7 @@ export default function CategoryBrandStep({ onNext }) {
       );
       setBreadcrumb(res.data);
     } catch (err) {
-      alert("Invalid category ID");
+      toast.success("Invalid category ID");
       setBreadcrumb([]);
     } finally {
       setLoading(false);
@@ -34,7 +35,7 @@ export default function CategoryBrandStep({ onNext }) {
       categoryId: Number(categoryId)
     });
       onNext();
-    alert("Category selected successfully");
+    toast.success("Category selected successfully");
   };
 
   return (

@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import { useState } from "react";
 import { authController } from "../controllers/authController";
 
@@ -7,9 +8,9 @@ export default function ForgotPassword() {
   const submit = async () => {
     try {
       await authController.forgotPassword({ email });
-      alert("If this email exists, a reset link has been sent!");
+      toast.success("If this email exists, a reset link has been sent!");
     } catch (err) {
-      alert("Error sending reset link");
+      toast.success("Error sending reset link");
     }
   };
 

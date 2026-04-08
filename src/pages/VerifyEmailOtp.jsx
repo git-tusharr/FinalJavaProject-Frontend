@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import { useState } from "react";
 import { authController } from "../controllers/authController";
 import { useNavigate, Link } from "react-router-dom";
@@ -66,7 +67,7 @@ export default function VerifyEmailOtp() {
     setLoading(true);
     try {
       await authController.verifyEmailOtp(email, otp);
-      alert("Email verified");
+      toast.success("Email verified");
       navigate("/verify-phone");
     } finally {
       setLoading(false);
