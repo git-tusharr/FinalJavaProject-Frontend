@@ -112,7 +112,7 @@ export default function Login() {
       }
 
     } catch {
-      toast.success("Invalid credentials");
+      toast.error("Invalid credentials");
     } finally {
       setLoading(false);
     }
