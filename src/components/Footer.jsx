@@ -1,12 +1,8 @@
 import { toast } from "react-toastify";
 import { Link, useNavigate } from "react-router-dom";
-import LocalOfferIcon      from "@mui/icons-material/LocalOffer";
-import ShoppingBagIcon     from "@mui/icons-material/ShoppingBag";
-import ReceiptLongIcon     from "@mui/icons-material/ReceiptLong";
-import PersonOutlineIcon   from "@mui/icons-material/PersonOutline";
+import LocalShippingIcon   from "@mui/icons-material/LocalShipping";
 import LockIcon            from "@mui/icons-material/Lock";
 import ReplayIcon          from "@mui/icons-material/Replay";
-import LocalShippingIcon   from "@mui/icons-material/LocalShipping";
 import HeadsetMicIcon      from "@mui/icons-material/HeadsetMic";
 import InstagramIcon       from "@mui/icons-material/Instagram";
 import TwitterIcon         from "@mui/icons-material/Twitter";
@@ -36,7 +32,6 @@ const CSS = `
     padding: 0 24px;
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    divide: none;
   }
   .sd-trust-item {
     display: flex;
@@ -298,7 +293,6 @@ const CSS = `
     .sd-footer-brand-col { grid-column: auto; }
     .sd-footer-bottom-inner { flex-direction: column; text-align: center; }
     .sd-footer-legal { justify-content: center; }
-    .sd-toolbar { padding: 0 14px; }
   }
 `;
 
@@ -307,52 +301,11 @@ function StyleTag() {
 }
 
 const TRUST = [
-  {
-    icon: <LocalShippingIcon style={{ fontSize: 20 }} />,
-    title: "Free Delivery",
-    desc: "On all orders above ₹499",
-  },
-  {
-    icon: <LockIcon style={{ fontSize: 20 }} />,
-    title: "Secure Payments",
-    desc: "100% safe & encrypted checkout",
-  },
-  {
-    icon: <ReplayIcon style={{ fontSize: 20 }} />,
-    title: "Easy Returns",
-    desc: "7-day hassle-free return policy",
-  },
-  {
-    icon: <HeadsetMicIcon style={{ fontSize: 20 }} />,
-    title: "24/7 Support",
-    desc: "We're always here to help you",
-  },
+  { icon: <LocalShippingIcon style={{ fontSize: 20 }} />, title: "Free Delivery",    desc: "On all orders above ₹499"          },
+  { icon: <LockIcon          style={{ fontSize: 20 }} />, title: "Secure Payments",  desc: "100% safe & encrypted checkout"    },
+  { icon: <ReplayIcon        style={{ fontSize: 20 }} />, title: "Easy Returns",     desc: "7-day hassle-free return policy"   },
+  { icon: <HeadsetMicIcon    style={{ fontSize: 20 }} />, title: "24/7 Support",     desc: "We're always here to help you"     },
 ];
-
-const LINKS = {
-  Shop: [
-    { label: "All Products",    to: "/products"  },
-    { label: "Today's Deals",   to: "/products"  },
-    { label: "New Arrivals",    to: "/products"  },
-    { label: "Electronics",     to: "/products"  },
-    { label: "Fashion",         to: "/products"  },
-    { label: "Home & Kitchen",  to: "/products"  },
-  ],
-  Account: [
-    { label: "Sign In",         to: "/login"     },
-    { label: "Register",        to: "/register"  },
-    { label: "My Orders",       to: "/orders/my" },
-    { label: "My Cart",         to: "/cart"      },
-    { label: "Wishlist",        to: "/"          },
-  ],
-  Help: [
-    { label: "FAQs",            to: "/" },
-    { label: "Shipping Policy", to: "/" },
-    { label: "Return Policy",   to: "/" },
-    { label: "Track Order",     to: "/" },
-    { label: "Contact Us",      to: "/" },
-  ],
-};
 
 const SOCIALS = [
   { icon: <InstagramIcon style={{ fontSize: 18 }} />, href: "#", label: "Instagram" },
@@ -362,7 +315,33 @@ const SOCIALS = [
 ];
 
 export default function Footer() {
-  const navigate = useNavigate();
+  // Read userId once — used for dynamic routes like /cart/:userId and /wishlist/:userId
+  const userId = localStorage.getItem("userId");
+
+  const LINKS = {
+    Shop: [
+      { label: "All Products",   to: "/products"               },
+      { label: "Today's Deals",  to: "/products"               },
+      { label: "New Arrivals",   to: "/products"               },
+      { label: "Search",         to: "/search"                 },
+    ],
+    Account: [
+      { label: "Sign In",        to: "/login"                  },
+      { label: "Register",       to: "/register"               },
+      { label: "My Orders",      to: "/orders/my"              },
+      { label: "My Cart",        to: userId ? `/cart/${userId}`      : "/login" },
+      { label: "Wishlist",       to: userId ? `/wishlist/${userId}`  : "/login" },
+      { label: "Admin Panel",    to: "/admin/orders"           },
+      { label: "Seller Panel",   to: "/admin/sellerpannel"     },
+    ],
+    Help: [
+      { label: "Forgot Password",  to: "/forgot-password"      },
+      { label: "Track Order",      to: "/orders/my"            },
+      { label: "Shipping Policy",  to: "/"                     },
+      { label: "Return Policy",    to: "/"                     },
+      { label: "Contact Us",       to: "/"                     },
+    ],
+  };
 
   const handleNewsletter = (e) => {
     e.preventDefault();
