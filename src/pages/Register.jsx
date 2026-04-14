@@ -10,7 +10,7 @@ import LockOutlinedIcon   from "@mui/icons-material/LockOutlined";
 import PhoneOutlinedIcon  from "@mui/icons-material/PhoneOutlined";
 import { authController } from "../controllers/authController";
 import GoogleLoginButton  from "../components/GoogleLoginButton";
-import logo from "../assets/logo.png";
+import logo from "/logo.png";
 
 /* ── brand tokens ── */
 const T = {

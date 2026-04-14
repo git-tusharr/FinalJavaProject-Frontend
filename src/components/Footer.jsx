@@ -8,8 +8,8 @@ import InstagramIcon       from "@mui/icons-material/Instagram";
 import TwitterIcon         from "@mui/icons-material/Twitter";
 import FacebookIcon        from "@mui/icons-material/Facebook";
 import YouTubeIcon         from "@mui/icons-material/YouTube";
-import logo from "../assets/logo.png";
 
+const logo = "/logo.png";
 /* ─── Global styles ───────────────────────────────────────────────────────── */
 const CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');

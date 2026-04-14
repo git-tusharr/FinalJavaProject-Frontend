@@ -9,7 +9,7 @@ import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { useCart } from "../services/CartContext";
-import logo from "../assets/logo.png";
+import logo from "/logo.png";
 
 /* ─── Global styles ─────────────────────────────────────────────────────── */
 const CSS = `

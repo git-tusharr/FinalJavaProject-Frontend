@@ -4,36 +4,34 @@
     <meta charset="UTF-8" />
 
     <!-- Favicon -->
-   <link rel="icon" type="image/png" href="/logo.png" />
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <link rel="apple-touch-icon" href="/logo.png" />
+
     <!-- Viewport -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <title>StealDeals</title>
 
-    <!-- 🔤 Google Fonts (MANDATORY for your theme) -->
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
 
-    <!-- 🌑 Global Theme Styling -->
     <style>
       html, body, #root {
         margin: 0;
         padding: 0;
         min-height: 100%;
-        background-color: #080808; /* T.black */
+        background-color: #080808;
         font-family: 'DM Sans', sans-serif;
-        color: #e2e2e2; /* T.text */
+        color: #e2e2e2;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
       }
 
       * {
         box-sizing: border-box;
-      }
-
-      /* 🔥 Scrollbar Hidden */
-      * {
         scrollbar-width: none;
       }
+
       *::-webkit-scrollbar {
         display: none;
       }
@@ -50,7 +48,6 @@
   <body>
     <div id="root"></div>
 
-    <!-- React Entry -->
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

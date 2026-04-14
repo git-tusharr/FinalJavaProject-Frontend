@@ -5,7 +5,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { Box, Typography, InputBase, CircularProgress } from "@mui/material";
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
-import logo from "../assets/logo.png";
+
 
 /* ── brand tokens ── */
 const T = {
@@ -19,6 +19,8 @@ const T = {
   text:    "#e2e2e2",
   muted:   "#666666",
 };
+
+const logo = "/logo.png";
 
 const SYNE = "'Syne', sans-serif";
 const DM   = "'DM Sans', sans-serif";

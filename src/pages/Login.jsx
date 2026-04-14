@@ -9,7 +9,7 @@ import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import { authController } from "../controllers/authController";
 import { useCart } from "../services/CartContext";
 import GoogleLoginButton from "../components/GoogleLoginButton";
-import logo from "../assets/logo.png";
+import logo from "/logo.png";
 
 /* ── brand tokens ── */
 const T = {

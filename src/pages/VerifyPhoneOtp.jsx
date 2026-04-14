@@ -4,7 +4,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { Box, Typography, InputBase, CircularProgress } from "@mui/material";
 import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
-import logo from "../assets/logo.png";
+
 
 /* ── brand tokens ── */
 const T = {
@@ -19,6 +19,8 @@ const T = {
   muted:   "#666666",
   green:   "#4ade80",
 };
+
+const logo = "/logo.png";
 
 const SYNE = "'Syne', sans-serif";
 const DM   = "'DM Sans', sans-serif";
